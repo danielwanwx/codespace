@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Codespace</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:"Barlow",sans-serif; -webkit-font-smoothing:antialiased; }
+body { background:#fff; color:#1a1a1a; overflow:hidden; height:100vh; }
+::selection { background:rgba(0,0,0,0.08); }
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.12); }
+
+.app { display:flex; flex-direction:column; height:100vh; }
+
+/* HEADER */
+.header { height:52px; display:flex; align-items:center; padding:0 32px; flex-shrink:0; border-bottom:1px solid rgba(0,0,0,0.06); }
+.logo { font-family:"Barlow Condensed",sans-serif; font-size:18px; font-weight:600; letter-spacing:0.35em; text-transform:uppercase; color:#111; margin-right:40px; }
+.header-stats { display:flex; gap:24px; }
+.header-stat { font-size:12px; font-weight:400; color:rgba(0,0,0,0.35); letter-spacing:0.04em; }
+.header-stat strong { font-weight:600; color:rgba(0,0,0,0.7); margin-right:2px; }
+
+/* CONTENT */
+.content { display:flex; flex:1; min-height:0; }
+.graph-area { flex:1; position:relative; overflow:hidden; background:#fff; }
+
+/* SEARCH */
+.search-bar { position:absolute; top:16px; left:20px; z-index:10; width:240px; }
+.search-wrap { display:flex; align-items:center; gap:8px; padding:0 0 6px 0; border-bottom:1px solid rgba(0,0,0,0.1); }
+.search-wrap:focus-within { border-color:rgba(0,0,0,0.25); }
+.search-icon { width:14px; height:14px; stroke:rgba(0,0,0,0.25); fill:none; stroke-width:2; flex-shrink:0; }
+.search-input { background:transparent; border:none; outline:none; color:#111; font-family:inherit; font-size:13px; font-weight:400; width:100%; }
+.search-input::placeholder { color:rgba(0,0,0,0.25); }
+.search-results { max-height:280px; overflow-y:auto; margin-top:4px; background:#fff; border-top:1px solid rgba(0,0,0,0.06); }
+.search-result { display:flex; align-items:center; padding:8px 12px; cursor:pointer; gap:10px; transition:background 0.15s; }
+.search-result:hover { background:rgba(0,0,0,0.03); }
+.sr-kind { font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:rgba(0,0,0,0.25); width:24px; flex-shrink:0; }
+.sr-name { font-size:13px; font-weight:500; color:#222; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sr-mod { font-size:11px; font-weight:300; color:rgba(0,0,0,0.3); }
+
+/* ZOOM */
+.zoom-toolbar { position:absolute; top:20px; right:24px; z-index:10; display:flex; gap:0; }
+.zoom-btn { padding:6px 16px; font-family:inherit; font-size:11px; font-weight:400; text-transform:uppercase; letter-spacing:0.12em; cursor:pointer; border:none; background:transparent; color:rgba(0,0,0,0.2); transition:all 0.2s; }
+.zoom-btn:hover { color:rgba(0,0,0,0.5); }
+.zoom-btn.active { color:#fff; background:#111; font-weight:600; }
+
+/* LEGEND */
+.legend { position:absolute; bottom:140px; left:24px; z-index:10; }
+.legend-item { display:flex; align-items:center; gap:8px; padding:3px 0; font-size:11px; font-weight:400; color:rgba(0,0,0,0.4); letter-spacing:0.02em; }
+.legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+/* MINIMAP */
+.minimap { position:absolute; bottom:20px; left:24px; z-index:10; opacity:0.5; transition:opacity 0.3s; }
+.minimap:hover { opacity:0.9; }
+
+/* SIDE PANEL */
+.side-panel { width:0; flex-shrink:0; overflow:hidden; border-left:1px solid rgba(0,0,0,0.06); opacity:0; transition:width 0.3s ease, opacity 0.25s ease, padding 0.3s ease; }
+.side-panel.open { width:380px; padding:28px 24px; opacity:1; overflow-y:auto; }
+.panel-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+.panel-title { font-family:"Barlow Condensed",sans-serif; font-size:26px; font-weight:700; letter-spacing:0.02em; color:#000; line-height:1.2; }
+.panel-close { background:none; border:none; color:rgba(0,0,0,0.2); font-size:22px; cursor:pointer; padding:0 4px; line-height:1; transition:color 0.15s; }
+.panel-close:hover { color:#111; }
+.panel-meta { display:flex; align-items:center; gap:12px; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid rgba(0,0,0,0.06); }
+.panel-file { font-size:12px; font-weight:400; color:rgba(0,0,0,0.4); }
+.panel-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; }
+.panel-badge-dot { width:7px; height:7px; border-radius:50%; }
+.panel-kind { font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:0.08em; color:rgba(0,0,0,0.3); }
+.panel-stats { display:flex; gap:16px; margin-bottom:20px; }
+.panel-stat { font-size:12px; font-weight:400; color:rgba(0,0,0,0.35); }
+.panel-stat strong { font-weight:700; color:rgba(0,0,0,0.7); margin-right:2px; }
+.section-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:#111; margin-top:20px; margin-bottom:8px; }
+.sig-block { font-size:13px; font-weight:500; color:rgba(0,0,0,0.7); line-height:1.6; padding:10px 12px; background:rgba(0,0,0,0.025); word-break:break-all; font-family:"SF Mono","Fira Code",monospace; }
+.doc-text { font-size:14px; font-weight:400; color:rgba(0,0,0,0.55); line-height:1.8; }
+.wiki-link { display:inline-block; margin-top:10px; font-size:12px; font-weight:500; color:rgba(0,0,0,0.35); text-decoration:none; letter-spacing:0.04em; transition:color 0.15s; cursor:pointer; }
+.wiki-link:hover { color:#111; }
+.fn-list { list-style:none; }
+.fn-item { padding:5px 0; font-size:13px; font-weight:400; color:rgba(0,0,0,0.55); cursor:pointer; transition:color 0.15s; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fn-item:hover { color:#111; }
+.fn-item .fk { font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:rgba(0,0,0,0.18); margin-right:8px; }
+.fn-item .fn-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+.explain-btn { display:inline-block; margin-top:8px; padding:10px 28px; font-family:inherit; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:0.15em; background:#111; color:#fff; border:none; cursor:pointer; transition:opacity 0.2s; }
+.explain-btn:hover { opacity:0.8; }
+.expl-box { margin-top:14px; font-size:14px; font-weight:400; line-height:1.8; color:rgba(0,0,0,0.55); }
+.expl-box strong { display:block; font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:rgba(0,0,0,0.25); margin-bottom:8px; }
+
+/* TOOLTIP */
+.tooltip { position:fixed; padding:10px 14px; pointer-events:none; z-index:100; max-width:240px; background:#111; color:#fff; opacity:0; transition:opacity 0.15s; }
+.tooltip.visible { opacity:1; }
+.tt-name { font-size:13px; font-weight:600; }
+.tt-type { font-size:9px; font-weight:500; text-transform:uppercase; letter-spacing:0.1em; color:rgba(255,255,255,0.45); margin-top:2px; }
+.tt-doc { font-size:12px; font-weight:300; color:rgba(255,255,255,0.65); margin-top:3px; }
+
+/* SVG */
+.graph-svg { width:100%; height:100%; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <span class="logo">Codespace</span>
+    <div class="header-stats">
+      <span class="header-stat"><strong>56</strong> symbols</span>
+      <span class="header-stat"><strong>40</strong> edges</span>
+      <span class="header-stat"><strong>2</strong> modules</span>
+    </div>
+  </div>
+  <div class="content">
+    <div class="graph-area" id="graphArea">
+      <svg class="graph-svg" id="graph"></svg>
+      <div class="search-bar">
+        <div class="search-wrap">
+          <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+          <input class="search-input" type="text" placeholder="Search symbols..." id="searchInput">
+        </div>
+        <div class="search-results" id="searchResults" style="display:none"></div>
+      </div>
+      <div class="zoom-toolbar">
+        <button class="zoom-btn" data-level="repo" onclick="setZoom('repo')">Repo</button>
+        <button class="zoom-btn active" data-level="module" onclick="setZoom('module')">Module</button>
+        <button class="zoom-btn" data-level="function" onclick="setZoom('function')">Func</button>
+      </div>
+      <div class="legend" id="legend">
+        <div class="legend-item"><span class="legend-dot" style="background:#2196F3"></span>Pipeline</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#4CAF50"></span>Indexing</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#9C27B0"></span>Symbols</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#FF9800"></span>Graph Resolution</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#00BCD4"></span>Clustering</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#78909C"></span>Tests</div>
+      </div>
+      <div class="minimap"><canvas id="minimapCanvas" width="160" height="100"></canvas></div>
+    </div>
+    <div class="side-panel" id="sidePanel">
+      <div class="panel-header">
+        <div class="panel-title" id="panelTitle"></div>
+        <button class="panel-close" onclick="closePanel()">&times;</button>
+      </div>
+      <div class="panel-meta">
+        <span class="panel-badge" id="panelBadge"><span class="panel-badge-dot" id="panelDot"></span><span id="panelGrp"></span></span>
+        <span class="panel-kind" id="panelKind"></span>
+        <span class="panel-file" id="panelFile"></span>
+      </div>
+      <div class="panel-stats" id="panelStats"></div>
+      <div class="section-label">Signature</div>
+      <div class="sig-block" id="panelSig"></div>
+      <div class="section-label">Description</div>
+      <div class="doc-text" id="panelDoc"></div>
+      <div class="section-label" id="callsLabel">Calls</div>
+      <ul class="fn-list" id="panelCalls"></ul>
+      <div class="section-label" id="calledByLabel">Called By</div>
+      <ul class="fn-list" id="panelCalledBy"></ul>
+      <div class="section-label">AI Analysis</div>
+      <button class="explain-btn" id="explainBtn">Explain with AI</button>
+      <div class="expl-box" id="explResult" style="display:none">
+        <strong>Explanation</strong>
+        <span id="explText"></span>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="tooltip" id="tooltip">
+  <div class="tt-name" id="ttName"></div>
+  <div class="tt-type" id="ttType"></div>
+  <div class="tt-doc" id="ttDoc"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// MODULE COLORS
+// ═══════════════════════════════════════
+const COLORS = {
+  pipeline:   { fill:"#2196F3", bg:"rgba(33,150,243,0.04)", border:"rgba(33,150,243,0.12)", text:"#1976D2" },
+  indexing:   { fill:"#4CAF50", bg:"rgba(76,175,80,0.04)",  border:"rgba(76,175,80,0.12)",  text:"#388E3C" },
+  symbols:    { fill:"#9C27B0", bg:"rgba(156,39,176,0.04)", border:"rgba(156,39,176,0.12)", text:"#7B1FA2" },
+  graph:      { fill:"#FF9800", bg:"rgba(255,152,0,0.04)",  border:"rgba(255,152,0,0.12)",  text:"#F57C00" },
+  clustering: { fill:"#00BCD4", bg:"rgba(0,188,212,0.04)",  border:"rgba(0,188,212,0.12)",  text:"#0097A7" },
+  t_idx:      { fill:"#78909C", bg:"rgba(120,144,156,0.03)",border:"rgba(120,144,156,0.08)",text:"#546E7A" },
+  t_sym:      { fill:"#78909C", bg:"rgba(120,144,156,0.03)",border:"rgba(120,144,156,0.08)",text:"#546E7A" },
+  t_other:    { fill:"#78909C", bg:"rgba(120,144,156,0.03)",border:"rgba(120,144,156,0.08)",text:"#546E7A" },
+};
+
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+const GROUPS = [
+  { id:"pipeline",  label:"Pipeline",        col:1, row:0 },
+  { id:"indexing",  label:"Indexing",         col:0, row:1 },
+  { id:"symbols",   label:"Symbols",          col:2, row:1 },
+  { id:"graph",     label:"Graph Resolution", col:0, row:2 },
+  { id:"clustering",label:"Clustering",       col:2, row:2 },
+  { id:"t_idx",     label:"Indexer Tests",    col:4, row:0 },
+  { id:"t_sym",     label:"Symbol Tests",     col:4, row:1 },
+  { id:"t_other",   label:"Other Tests",      col:4, row:2 },
+];
+
+const NODES = [
+  { id:"main",           label:"main()",                 grp:"pipeline",  kind:"fn",  file:"cli.py:17",
+    doc:"CLI entry point — runs full pipeline",
+    overview:"Orchestrates the entire Codespace pipeline. Parses CLI arguments (repo path, output, LLM config), then sequentially invokes indexing, symbol extraction, call graph resolution, clustering, naming, and JSON export. Supports --serve flag to start a local HTTP server for visualization." },
+  { id:"_serve",         label:"_serve()",                grp:"pipeline",  kind:"fn",  file:"cli.py:97",
+    doc:"Start local HTTP server",
+    overview:"Copies the generated graph JSON into the frontend dist/ directory and starts a Python http.server on the specified port. Used for quick local preview of the visualization without a separate build step." },
+  { id:"build_graph",    label:"build_codespace_graph()", grp:"pipeline",  kind:"fn",  file:"export.py:9",
+    doc:"Assemble codespace_graph.json",
+    overview:"Transforms internal data structures (clusters, symbols, edges) into the final codespace_graph.json format consumed by the frontend. Outputs metadata (repo name, stats), nodes with qualified names and signatures, edges with weights, and cluster hierarchy." },
+  { id:"scan_repo",      label:"scan_repo()",             grp:"indexing",  kind:"fn",  file:"indexer.py:31",
+    doc:"Walk repo, group files into Modules",
+    overview:"Walks a Python repository directory tree, collects all .py files, groups them by directory into Module objects. Applies merge-small logic: directories with fewer files than min_files_per_module get merged into their parent module to avoid visual clutter." },
+  { id:"IndexedFile",    label:"IndexedFile",              grp:"indexing",  kind:"cls", file:"indexer.py:10",
+    doc:"Represents a source file",
+    overview:"Dataclass holding a source file's relative path and full text content. Created during indexing and passed downstream to symbol extraction." },
+  { id:"Module",         label:"Module",                   grp:"indexing",  kind:"cls", file:"indexer.py:18",
+    doc:"Group of files in a directory",
+    overview:"Dataclass representing a directory-based module. Contains a slug (e.g. 'src.codespace'), display label, and list of IndexedFile objects. Becomes a visual cluster in the final graph." },
+  { id:"extract_symbols",label:"extract_symbols()",        grp:"symbols",   kind:"fn",  file:"symbols.py:21",
+    doc:"Extract functions, classes from AST",
+    overview:"Parses Python source code using the ast module. Extracts top-level functions, classes, and methods with their signatures, docstrings, line numbers, and call lists. Each symbol gets a qualified name like repo::module::file::symbol." },
+  { id:"build_reverse",  label:"build_reverse_index()",    grp:"symbols",   kind:"fn",  file:"symbols.py:66",
+    doc:"Populate called_by for all symbols",
+    overview:"After all symbols are extracted, builds reverse call edges. For each symbol's calls list, finds the target symbol and adds the caller to its called_by set. Enables bidirectional navigation in the graph." },
+  { id:"_format_sig",    label:"_format_signature()",      grp:"symbols",   kind:"fn",  file:"symbols.py:55",
+    doc:"Build signature string from AST",
+    overview:"Converts an AST function definition node into a human-readable signature string including parameter names, type annotations, and return type. Handles *args, **kwargs, and default values." },
+  { id:"_extract_calls", label:"_extract_calls()",         grp:"symbols",   kind:"fn",  file:"symbols.py:60",
+    doc:"Extract function calls from AST node",
+    overview:"Walks an AST subtree to find all Call nodes. Extracts the callee name from Name and Attribute nodes, building a list of unresolved call targets for later resolution by the graph aggregator." },
+  { id:"SymbolEntry",    label:"SymbolEntry",              grp:"symbols",   kind:"cls", file:"symbols.py:6",
+    doc:"Extracted code symbol",
+    overview:"Dataclass representing a single code symbol (function, class, or method). Fields: qualified_name, kind, signature, docstring, file, line, calls list, and called_by set." },
+  { id:"aggregate",      label:"aggregate_edges()",        grp:"graph",     kind:"fn",  file:"graph_aggregator.py:35",
+    doc:"Resolve calls to qualified edges",
+    overview:"The core graph builder. Takes all extracted symbols and file contents, resolves unqualified call names to specific target symbols using a 4-priority system (import-based > same-module > unique-global > ambiguous). Produces both function-level and module-level edge lists." },
+  { id:"_resolve",       label:"_resolve()",               grp:"graph",     kind:"fn",  file:"graph_aggregator.py:51",
+    doc:"Priority-based call resolution",
+    overview:"Resolves a single call name to a target symbol. Priority order: (1) imported name from the same file, (2) symbol in the same module, (3) unique name across the repo, (4) skip if ambiguous. Filters out common builtins like print, len, range." },
+  { id:"parse_imports",  label:"parse_imports()",          grp:"graph",     kind:"fn",  file:"imports.py:7",
+    doc:"Parse import statements",
+    overview:"Parses Python import and from...import statements using AST. Maps imported names to their source modules, skipping stdlib modules. Used by the graph aggregator for priority-1 import-based call resolution." },
+  { id:"ResolvedEdge",   label:"ResolvedEdge",             grp:"graph",     kind:"cls", file:"graph_aggregator.py:17",
+    doc:"A resolved call edge",
+    overview:"Dataclass representing a resolved directed edge between two symbols. Fields: source (caller qualified name), target (callee qualified name), weight (call count), and resolution kind." },
+  { id:"form_clusters",  label:"form_clusters()",          grp:"clustering",kind:"fn",  file:"clusters.py:17",
+    doc:"Convert modules to visual clusters",
+    overview:"Converts Module objects into Cluster objects for the frontend. Each cluster gets a unique ID, color assignment, position hint, and list of contained symbol IDs. Forms the visual grouping layer in the graph." },
+  { id:"name_clusters",  label:"name_clusters()",          grp:"clustering",kind:"fn",  file:"cluster_namer.py:25",
+    doc:"LLM semantic naming with fallback",
+    overview:"Generates human-readable names for clusters. If an LLM client is available, sends symbol lists to the model for semantic naming (e.g. 'HTTP Routing' instead of 'src.routes'). Falls back to directory-based names when no LLM is configured." },
+  { id:"Cluster",        label:"Cluster",                  grp:"clustering",kind:"cls", file:"clusters.py:6",
+    doc:"Visual cluster for graph",
+    overview:"Dataclass representing a visual cluster in the final graph. Contains ID, label, color, list of symbol IDs, and optional parent cluster ID for nested hierarchy." },
+  { id:"LLMClient",      label:"LLMClient",                grp:"clustering",kind:"cls", file:"llm.py:5",
+    doc:"LLM client abstraction",
+    overview:"Lightweight abstraction over Anthropic and OpenAI APIs. Supports provider selection, model override, and a simple complete() method. Used by cluster_namer for semantic naming." },
+  // tests
+  { id:"t_scan1", label:"test_scan_finds_modules()", grp:"t_idx",  kind:"test", file:"test_indexer.py:14" },
+  { id:"t_scan2", label:"test_scan_collects_files()",grp:"t_idx",  kind:"test", file:"test_indexer.py:21" },
+  { id:"t_scan3", label:"test_scan_skips_excluded()",grp:"t_idx",  kind:"test", file:"test_indexer.py:28" },
+  { id:"t_merge", label:"test_merge_small()",        grp:"t_idx",  kind:"test", file:"test_indexer.py:37" },
+  { id:"t_ext1",  label:"test_extract_functions()",  grp:"t_sym",  kind:"test", file:"test_symbols.py:24" },
+  { id:"t_cls",   label:"test_extract_class()",      grp:"t_sym",  kind:"test", file:"test_symbols.py:29" },
+  { id:"t_meth",  label:"test_extract_methods()",    grp:"t_sym",  kind:"test", file:"test_symbols.py:34" },
+  { id:"t_calls", label:"test_calls_extracted()",    grp:"t_sym",  kind:"test", file:"test_symbols.py:40" },
+  { id:"t_imp",   label:"test_parse_from_imports()", grp:"t_other",kind:"test", file:"test_imports.py:8" },
+  { id:"t_res",   label:"test_resolves_cross()",     grp:"t_other",kind:"test", file:"test_graph_agg.py:40" },
+  { id:"t_exp",   label:"test_export_structure()",   grp:"t_other",kind:"test", file:"test_export.py:5" },
+  { id:"t_nam",   label:"test_build_naming()",       grp:"t_other",kind:"test", file:"test_cluster_namer.py:4" },
+];
+
+const EDGES = [
+  { s:"main", t:"scan_repo", w:3 },
+  { s:"main", t:"extract_symbols", w:2 },
+  { s:"main", t:"build_reverse", w:1 },
+  { s:"main", t:"aggregate", w:2 },
+  { s:"main", t:"form_clusters", w:1 },
+  { s:"main", t:"name_clusters", w:1 },
+  { s:"main", t:"build_graph", w:1 },
+  { s:"main", t:"_serve", w:1 },
+  { s:"main", t:"LLMClient", w:1 },
+  { s:"extract_symbols", t:"_format_sig", w:2 },
+  { s:"extract_symbols", t:"_extract_calls", w:2 },
+  { s:"aggregate", t:"parse_imports", w:2 },
+  { s:"aggregate", t:"_resolve", w:3 },
+  { s:"name_clusters", t:"LLMClient", w:1 },
+  { s:"t_scan1", t:"scan_repo", w:1 },
+  { s:"t_scan2", t:"scan_repo", w:1 },
+  { s:"t_scan3", t:"scan_repo", w:1 },
+  { s:"t_merge", t:"scan_repo", w:1 },
+  { s:"t_ext1",  t:"extract_symbols", w:1 },
+  { s:"t_cls",   t:"extract_symbols", w:1 },
+  { s:"t_meth",  t:"extract_symbols", w:1 },
+  { s:"t_calls", t:"extract_symbols", w:1 },
+  { s:"t_imp",   t:"parse_imports", w:1 },
+  { s:"t_res",   t:"aggregate", w:1 },
+  { s:"t_exp",   t:"build_graph", w:1 },
+  { s:"t_nam",   t:"name_clusters", w:1 },
+];
+
+// ═══════════════════════════════════════
+// LAYOUT
+// ═══════════════════════════════════════
+const el = document.getElementById("graphArea");
+const W = el.clientWidth;
+const H = el.clientHeight;
+
+const CW = 210, RH = 185;
+const baseX = W * 0.15, baseY = H * 0.12;
+const testX = W * 0.74, testY = H * 0.12;
+
+const grpCenter = {};
+GROUPS.forEach(g => {
+  if (g.col < 4) {
+    grpCenter[g.id] = { x: baseX + g.col * CW, y: baseY + g.row * RH };
+  } else {
+    grpCenter[g.id] = { x: testX, y: testY + g.row * RH };
+  }
+});
+
+// ═══════════════════════════════════════
+// D3
+// ═══════════════════════════════════════
+const svg = d3.select("#graph").attr("viewBox", [0, 0, W, H]);
+const gRoot = svg.append("g");
+svg.call(d3.zoom().scaleExtent([0.15, 5]).on("zoom", ev => gRoot.attr("transform", ev.transform)));
+
+const nodes = NODES.map(n => {
+  const c = grpCenter[n.grp];
+  const a = Math.random() * Math.PI * 2, r = 10 + Math.random() * 25;
+  return { ...n, x: c.x + Math.cos(a) * r, y: c.y + Math.sin(a) * r };
+});
+const links = EDGES.map(e => ({ source: e.s, target: e.t, weight: e.w }));
+
+// Custom cluster force — pulls nodes toward their group's live centroid
+// When you drag one node, the centroid shifts, so others follow
+function forceCluster(strength) {
+  let ns;
+  function force(alpha) {
+    const centroids = {};
+    // Compute live centroid per group (including dragged nodes)
+    GROUPS.forEach(g => {
+      const gn = ns.filter(n => n.grp === g.id);
+      if (!gn.length) return;
+      centroids[g.id] = {
+        x: d3.mean(gn, n => n.x),
+        y: d3.mean(gn, n => n.y),
+      };
+    });
+    // Pull each non-fixed node toward its group centroid
+    ns.forEach(n => {
+      if (n.fx != null) return; // skip dragged node
+      const c = centroids[n.grp];
+      if (!c) return;
+      n.vx += (c.x - n.x) * alpha * strength;
+      n.vy += (c.y - n.y) * alpha * strength;
+    });
+  }
+  force.initialize = function(nodes) { ns = nodes; };
+  return force;
+}
+
+// Drift force — feather-like floating, same group drifts together
+const grpPhase = {};
+GROUPS.forEach((g, i) => { grpPhase[g.id] = i * 1.8; });
+
+function forceDrift() {
+  let ns;
+  const t0 = Date.now();
+  function force(alpha) {
+    const t = (Date.now() - t0) / 1000;
+    ns.forEach(n => {
+      if (n.fx != null) return;
+      const gp = grpPhase[n.grp];
+      // Large sweeping sine waves across the full graph area
+      const targetX = W * 0.5 + Math.sin(t * 0.08 + gp) * W * 0.35;
+      const targetY = H * 0.5 + Math.cos(t * 0.06 + gp * 0.7 + 1.2) * H * 0.35;
+      // Gently pull toward target
+      n.vx += (targetX - n.x) * 0.003;
+      n.vy += (targetY - n.y) * 0.003;
+    });
+  }
+  force.initialize = function(nodes) { ns = nodes; };
+  return force;
+}
+
+const sim = d3.forceSimulation(nodes)
+  .force("link", d3.forceLink(links).id(d => d.id).distance(50).strength(0.25))
+  .force("charge", d3.forceManyBody().strength(-45))
+  .force("collision", d3.forceCollide(18))
+  // No fixed anchor — drift force drives position across full area
+  .force("cluster", forceCluster(0.7))
+  .force("drift", forceDrift())
+  .alphaDecay(0)       // never decays — always running
+  .alphaMin(0)
+  .velocityDecay(0.45) // high damping for smooth, not jittery
+  .alpha(0.1);
+
+// ═══════════════════════════════════════
+// RENDER LAYERS
+// ═══════════════════════════════════════
+
+// L1: Edges
+const linkLayer = gRoot.append("g");
+const linkEls = linkLayer.selectAll("line").data(links).join("line")
+  .attr("stroke", "rgba(0,0,0,0.06)")
+  .attr("stroke-width", d => 0.5 + Math.min(d.weight * 0.4, 1.5))
+  .style("transition", "stroke 0.3s, stroke-width 0.3s");
+
+// L2: Nodes
+const nodeLayer = gRoot.append("g");
+const nodeEls = nodeLayer.selectAll("g").data(nodes).join("g")
+  .style("cursor", "pointer");
+
+// Invisible hit area — 20px radius, always draggable/clickable
+nodeEls.append("circle")
+  .attr("r", 20)
+  .attr("fill", "transparent")
+  .attr("stroke", "none");
+
+// Visible shapes — all solid circles, fill = stroke color
+nodeEls.each(function(d) {
+  const el = d3.select(this);
+  const col = COLORS[d.grp].fill;
+  const isMain = d.id === "main";
+  const r = d.kind === "test" ? 4 : (isMain ? 9 : 6);
+  el.append("circle")
+    .attr("class", "nshape")
+    .attr("r", r)
+    .attr("fill", col)
+    .attr("stroke", col)
+    .attr("stroke-width", isMain ? 2 : 1)
+    .style("transition", "all 0.25s");
+});
+
+// Labels
+nodeEls.filter(d => d.kind !== "test").append("text")
+  .attr("dx", d => d.id === "main" ? 14 : 10)
+  .attr("dy", 4)
+  .attr("fill", "rgba(0,0,0,0.55)")
+  .attr("font-size", d => d.id === "main" ? "13px" : "11px")
+  .attr("font-weight", d => d.id === "main" ? "600" : "400")
+  .attr("pointer-events", "none")
+  .style("transition", "fill 0.25s, font-weight 0.25s")
+  .text(d => {
+    let n = d.label.replace(/\(.*\)/, "");
+    return n.length > 20 ? n.slice(0, 18) + "…" : n;
+  });
+
+// Hover glow effect
+nodeEls
+  .on("mouseenter", function(ev, d) {
+    if (d.id === selectedId) return;
+    d3.select(this).select(".nshape")
+      .attr("stroke-width", d.id === "main" ? 3 : 2.5)
+      .attr("filter", `drop-shadow(0 0 6px ${COLORS[d.grp].fill}40)`);
+    d3.select(this).select("text").attr("fill", "rgba(0,0,0,0.85)").attr("font-weight", "600");
+    // tooltip
+    document.getElementById("ttName").textContent = d.label;
+    document.getElementById("ttType").textContent = d.kind === "cls" ? "CLASS" : d.kind === "test" ? "TEST" : "FUNCTION";
+    document.getElementById("ttDoc").textContent = d.doc || "";
+    ttEl.style.left = (ev.clientX + 16) + "px";
+    ttEl.style.top = (ev.clientY - 10) + "px";
+    ttEl.classList.add("visible");
+  })
+  .on("mousemove", function(ev) {
+    ttEl.style.left = (ev.clientX + 16) + "px";
+    ttEl.style.top = (ev.clientY - 10) + "px";
+  })
+  .on("mouseleave", function(ev, d) {
+    if (d.id === selectedId) return;
+    resetNodeStyle(d3.select(this), d);
+    ttEl.classList.remove("visible");
+  });
+
+function resetNodeStyle(el, d) {
+  const col = COLORS[d.grp].fill;
+  const shape = el.select(".nshape");
+  const isMain = d.id === "main";
+  shape.attr("filter", null)
+    .attr("fill", col).attr("fill-opacity", 1)
+    .attr("stroke", col).attr("stroke-opacity", 1)
+    .attr("stroke-width", isMain ? 2 : 1)
+    .attr("r", d.kind === "test" ? 4 : (isMain ? 9 : 6));
+  el.select("text").attr("fill", "rgba(0,0,0,0.55)").attr("font-weight", isMain ? "600" : "400");
+}
+
+// ═══════════════════════════════════════
+// DRAG — nodes stay where you put them
+// ═══════════════════════════════════════
+nodeEls.call(d3.drag()
+  .on("start", function(ev, d) {
+    ttEl.classList.remove("visible");
+    if (!ev.active) sim.alphaTarget(0.4).restart();
+    d.fx = d.x; d.fy = d.y;
+    d._dragStartX = d.x; d._dragStartY = d.y;
+  })
+  .on("drag", function(ev, d) {
+    d.fx = ev.x; d.fy = ev.y;
+    d.x = ev.x; d.y = ev.y;
+    // Shift the anchor point for this group so cluster follows
+    const dx = ev.x - d._dragStartX;
+    const dy = ev.y - d._dragStartY;
+    grpCenter[d.grp].x += dx * 0.15;
+    grpCenter[d.grp].y += dy * 0.15;
+    d._dragStartX = ev.x; d._dragStartY = ev.y;
+    ticked();
+  })
+  .on("end", function(ev, d) {
+    if (!ev.active) sim.alphaTarget(0);
+    d.fx = null; d.fy = null;
+    delete d._dragStartX; delete d._dragStartY;
+  })
+);
+
+// Click
+nodeEls.on("click", function(ev, d) {
+  ev.stopPropagation();
+  selectNode(d);
+});
+
+// ═══════════════════════════════════════
+// TICK
+// ═══════════════════════════════════════
+function ticked() {
+  linkEls
+    .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+    .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+  nodeEls.attr("transform", d => `translate(${d.x},${d.y})`);
+}
+sim.on("tick", ticked);
+
+// ═══════════════════════════════════════
+// SELECT
+// ═══════════════════════════════════════
+let selectedId = null;
+const ttEl = document.getElementById("tooltip");
+
+function selectNode(d) {
+  selectedId = d.id;
+  const col = COLORS[d.grp].fill;
+
+  const conn = new Set([d.id]);
+  links.forEach(l => {
+    if (l.source.id === d.id) conn.add(l.target.id);
+    if (l.target.id === d.id) conn.add(l.source.id);
+  });
+
+  // Edges
+  linkEls
+    .attr("stroke", l => {
+      if (l.source.id === d.id) return COLORS[l.target.grp || l.source.grp].fill;
+      if (l.target.id === d.id) return COLORS[l.source.grp || l.target.grp].fill;
+      return "rgba(0,0,0,0.02)";
+    })
+    .attr("stroke-width", l =>
+      (l.source.id === d.id || l.target.id === d.id) ? 2 : 0.3
+    )
+    .attr("stroke-opacity", l =>
+      (l.source.id === d.id || l.target.id === d.id) ? 0.6 : 1
+    );
+
+  // Nodes
+  nodeEls.each(function(n) {
+    const el = d3.select(this);
+    const nc = COLORS[n.grp].fill;
+    if (n.id === d.id) {
+      // Selected: filled with group color
+      el.select(".nshape")
+        .attr("fill", nc).attr("fill-opacity", 1)
+        .attr("stroke", nc).attr("stroke-width", 2.5).attr("stroke-opacity", 1)
+        .attr("filter", `drop-shadow(0 0 10px ${nc}50)`);
+      el.select("text").attr("fill", "#111").attr("font-weight", "700");
+    } else if (conn.has(n.id)) {
+      // Connected: normal but vivid
+      el.select(".nshape")
+        .attr("stroke-opacity", 1).attr("fill-opacity", 1)
+        .attr("filter", null);
+      el.select("text").attr("fill", "rgba(0,0,0,0.7)").attr("font-weight", "500");
+    } else {
+      // Dimmed
+      el.select(".nshape")
+        .attr("stroke-opacity", 0.12).attr("fill-opacity", 0.3)
+        .attr("filter", null);
+      el.select("text").attr("fill", "rgba(0,0,0,0.1)").attr("font-weight", "400");
+    }
+  });
+
+  showPanel(d);
+}
+
+function deselectAll() {
+  selectedId = null;
+  linkEls
+    .attr("stroke", "rgba(0,0,0,0.06)")
+    .attr("stroke-width", d => 0.5 + Math.min(d.weight * 0.4, 1.5))
+    .attr("stroke-opacity", 1);
+  nodeEls.each(function(d) { resetNodeStyle(d3.select(this), d); });
+  hidePanel();
+}
+
+svg.on("click", function(ev) {
+  if (ev.target.tagName === "svg") deselectAll();
+});
+// Also deselect when clicking the empty group background
+gRoot.on("click", function(ev) {
+  if (ev.target === gRoot.node()) deselectAll();
+});
+
+// ═══════════════════════════════════════
+// SIDE PANEL
+// ═══════════════════════════════════════
+// Group display names
+const GRP_NAMES = {
+  pipeline:"Pipeline", indexing:"Indexing", symbols:"Symbols",
+  graph:"Graph Resolution", clustering:"Clustering",
+  t_idx:"Indexer Tests", t_sym:"Symbol Tests", t_other:"Other Tests",
+};
+
+function showPanel(d) {
+  const p = document.getElementById("sidePanel");
+  p.classList.add("open");
+  const col = COLORS[d.grp].fill;
+
+  // Title
+  document.getElementById("panelTitle").textContent = d.label.replace(/\(.*\)/, "");
+
+  // Meta: badge + kind + file
+  document.getElementById("panelDot").style.background = col;
+  document.getElementById("panelGrp").textContent = GRP_NAMES[d.grp] || d.grp;
+  document.getElementById("panelBadge").style.color = col;
+  document.getElementById("panelKind").textContent = d.kind === "cls" ? "Class" : d.kind === "test" ? "Test" : "Function";
+  document.getElementById("panelFile").textContent = d.file || "";
+
+  // Stats
+  const out = links.filter(l => l.source.id === d.id);
+  const inc = links.filter(l => l.target.id === d.id);
+  document.getElementById("panelStats").innerHTML =
+    `<span class="panel-stat"><strong>${out.length}</strong> outgoing</span>` +
+    `<span class="panel-stat"><strong>${inc.length}</strong> incoming</span>` +
+    `<span class="panel-stat"><strong>${out.length + inc.length}</strong> total edges</span>`;
+
+  // Signature
+  document.getElementById("panelSig").textContent = d.label;
+
+  // Description — overview + wiki link
+  const docEl = document.getElementById("panelDoc");
+  docEl.innerHTML = (d.overview || d.doc || "No description available.") +
+    `<br><a class="wiki-link" href="#" onclick="event.preventDefault(); alert('Opens wiki page for: ${d.id}')">View full documentation &rarr;</a>`;
+
+  // Reset AI section
+  document.getElementById("explResult").style.display = "none";
+  const btn = document.getElementById("explainBtn");
+  btn.style.display = "inline-block"; btn.textContent = "EXPLAIN WITH AI";
+
+  // Calls (outgoing)
+  document.getElementById("callsLabel").textContent = `Calls (${out.length})`;
+  const callsEl = document.getElementById("panelCalls");
+  callsEl.innerHTML = !out.length
+    ? '<li class="fn-item" style="color:rgba(0,0,0,0.12)">None</li>'
+    : out.map(l => {
+      const tc = COLORS[l.target.grp] ? COLORS[l.target.grp].fill : "#999";
+      return `<li class="fn-item" data-nid="${l.target.id}"><span class="fn-dot" style="background:${tc}"></span>${l.target.label||l.target.id}</li>`;
+    }).join("");
+
+  // Called By (incoming)
+  document.getElementById("calledByLabel").textContent = `Called By (${inc.length})`;
+  const byEl = document.getElementById("panelCalledBy");
+  byEl.innerHTML = !inc.length
+    ? '<li class="fn-item" style="color:rgba(0,0,0,0.12)">None</li>'
+    : inc.map(l => {
+      const sc = COLORS[l.source.grp] ? COLORS[l.source.grp].fill : "#999";
+      return `<li class="fn-item" data-nid="${l.source.id}"><span class="fn-dot" style="background:${sc}"></span>${l.source.label||l.source.id}</li>`;
+    }).join("");
+
+  // Click handlers
+  p.querySelectorAll(".fn-item[data-nid]").forEach(item => {
+    item.onclick = () => {
+      const nd = nodes.find(n => n.id === item.dataset.nid);
+      if (nd) selectNode(nd);
+    };
+  });
+}
+function hidePanel() { document.getElementById("sidePanel").classList.remove("open"); }
+function closePanel() { deselectAll(); }
+
+document.getElementById("explainBtn").addEventListener("click", function() {
+  this.textContent = "ANALYZING...";
+  setTimeout(() => {
+    this.style.display = "none";
+    document.getElementById("explResult").style.display = "block";
+    const d = nodes.find(n => n.id === selectedId);
+    document.getElementById("explText").textContent = d
+      ? `${d.label.replace(/\(.*\)/,"")} is part of the ${d.grp} subsystem. ${d.doc||""}`
+      : "";
+  }, 800);
+});
+
+// ═══════════════════════════════════════
+// ZOOM
+// ═══════════════════════════════════════
+function setZoom(level) {
+  document.querySelectorAll(".zoom-btn").forEach(b => b.classList.remove("active"));
+  document.querySelector(`[data-level="${level}"]`).classList.add("active");
+
+  if (level === "repo") {
+    // Show nothing — just the empty canvas
+    nodeEls.style("display", "none");
+    linkEls.style("display", "none");
+  } else if (level === "module") {
+    // Only functions (fn) — no cls, no test
+    nodeEls.style("display", d => d.kind === "fn" ? null : "none");
+    linkEls.style("display", d => (d.source.kind === "fn" && d.target.kind === "fn") ? null : "none");
+  } else {
+    // Functions + tests — no cls
+    nodeEls.style("display", d => d.kind === "cls" ? "none" : null);
+    linkEls.style("display", d => (d.source.kind === "cls" || d.target.kind === "cls") ? "none" : null);
+  }
+}
+
+// ═══════════════════════════════════════
+// SEARCH
+// ═══════════════════════════════════════
+const searchIn = document.getElementById("searchInput");
+const searchRes = document.getElementById("searchResults");
+searchIn.addEventListener("input", () => {
+  const q = searchIn.value.toLowerCase();
+  if (q.length < 2) { searchRes.style.display = "none"; return; }
+  const hits = nodes.filter(n => n.label.toLowerCase().includes(q)).slice(0, 8);
+  if (!hits.length) { searchRes.style.display = "none"; return; }
+  searchRes.style.display = "block";
+  searchRes.innerHTML = hits.map(n =>
+    `<div class="search-result" data-nid="${n.id}">
+      <span class="sr-kind">${n.kind==="cls"?"cls":n.kind==="test"?"tst":"fn"}</span>
+      <span class="sr-name">${n.label}</span>
+      <span class="sr-mod">${n.grp}</span>
+    </div>`
+  ).join("");
+  searchRes.querySelectorAll(".search-result").forEach(el => {
+    el.onclick = () => {
+      const nd = nodes.find(n => n.id === el.dataset.nid);
+      if (nd) selectNode(nd);
+      searchRes.style.display = "none"; searchIn.value = "";
+    };
+  });
+});
+searchIn.addEventListener("keydown", ev => {
+  if (ev.key === "Escape") { searchRes.style.display = "none"; searchIn.blur(); }
+  if (ev.key === "Enter") { const f = searchRes.querySelector(".search-result"); if (f) f.click(); }
+});
+
+// ═══════════════════════════════════════
+// MINIMAP
+// ═══════════════════════════════════════
+const mctx = document.getElementById("minimapCanvas").getContext("2d");
+function drawMinimap() {
+  mctx.clearRect(0, 0, 160, 100);
+  const xs = nodes.map(n => n.x||0), ys = nodes.map(n => n.y||0);
+  const mx = Math.min(...xs)-40, Mx = Math.max(...xs)+40;
+  const my = Math.min(...ys)-40, My = Math.max(...ys)+40;
+  const s = Math.min(160/(Mx-mx||1), 100/(My-my||1));
+  links.forEach(l => {
+    if (typeof l.source !== "object") return;
+    mctx.strokeStyle = "rgba(0,0,0,0.06)"; mctx.lineWidth = 0.5;
+    mctx.beginPath(); mctx.moveTo((l.source.x-mx)*s,(l.source.y-my)*s);
+    mctx.lineTo((l.target.x-mx)*s,(l.target.y-my)*s); mctx.stroke();
+  });
+  nodes.forEach(n => {
+    mctx.fillStyle = n.id===selectedId ? COLORS[n.grp].fill : "rgba(0,0,0,0.2)";
+    mctx.globalAlpha = n.kind==="test" ? 0.15 : 0.6;
+    mctx.beginPath(); mctx.arc((n.x-mx)*s,(n.y-my)*s, 1.5, 0, Math.PI*2); mctx.fill();
+    mctx.globalAlpha = 1;
+  });
+  requestAnimationFrame(drawMinimap);
+}
+drawMinimap();
+setZoom("module");
+</script>
+</body>
+</html>

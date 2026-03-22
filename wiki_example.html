@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>aggregate_edges — Codespace Wiki</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:"Barlow",sans-serif; -webkit-font-smoothing:antialiased; }
+body { background:#fff; color:#1a1a1a; line-height:1.7; }
+
+/* NAV */
+.topbar { position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid rgba(0,0,0,0.06); display:flex; align-items:center; height:48px; padding:0 32px; }
+.topbar-logo { font-family:"Barlow Condensed",sans-serif; font-size:16px; font-weight:600; letter-spacing:0.3em; text-transform:uppercase; color:#111; text-decoration:none; margin-right:24px; }
+.topbar-breadcrumb { font-size:13px; color:rgba(0,0,0,0.3); }
+.topbar-breadcrumb a { color:rgba(0,0,0,0.45); text-decoration:none; }
+.topbar-breadcrumb a:hover { color:#111; }
+.topbar-breadcrumb span { margin:0 6px; }
+
+/* LAYOUT */
+.layout { display:flex; max-width:1200px; margin:0 auto; }
+.sidebar { width:240px; flex-shrink:0; padding:28px 20px; border-right:1px solid rgba(0,0,0,0.06); position:sticky; top:48px; height:calc(100vh - 48px); overflow-y:auto; }
+.main { flex:1; padding:36px 48px; max-width:800px; }
+
+/* SIDEBAR */
+.sb-section { margin-bottom:20px; }
+.sb-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:#111; margin-bottom:8px; }
+.sb-item { display:block; font-size:13px; font-weight:400; color:rgba(0,0,0,0.45); text-decoration:none; padding:3px 0; transition:color 0.15s; }
+.sb-item:hover { color:#111; }
+.sb-item.active { color:#111; font-weight:600; }
+.sb-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+
+/* CONTENT */
+h1 { font-family:"Barlow Condensed",sans-serif; font-size:32px; font-weight:700; color:#000; letter-spacing:0.02em; margin-bottom:8px; }
+.subtitle { font-size:14px; color:rgba(0,0,0,0.45); margin-bottom:4px; }
+.meta-line { display:flex; align-items:center; gap:16px; margin-bottom:24px; padding-bottom:20px; border-bottom:1px solid rgba(0,0,0,0.06); }
+.meta-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; }
+.meta-badge .dot { width:7px; height:7px; border-radius:50%; }
+.meta-tag { font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:0.08em; color:rgba(0,0,0,0.3); }
+.meta-file { font-size:12px; color:rgba(0,0,0,0.35); font-family:"JetBrains Mono",monospace; }
+
+h2 { font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:#111; margin-top:36px; margin-bottom:14px; }
+p { font-size:15px; color:rgba(0,0,0,0.6); margin-bottom:14px; }
+ul, ol { font-size:15px; color:rgba(0,0,0,0.6); margin-bottom:14px; padding-left:20px; }
+li { margin-bottom:6px; }
+
+/* CODE */
+pre { background:rgba(0,0,0,0.025); padding:16px 20px; margin-bottom:16px; overflow-x:auto; font-family:"JetBrains Mono",monospace; font-size:13px; line-height:1.6; color:rgba(0,0,0,0.7); }
+code { font-family:"JetBrains Mono",monospace; font-size:13px; background:rgba(0,0,0,0.04); padding:1px 5px; color:rgba(0,0,0,0.7); }
+pre code { background:none; padding:0; }
+
+/* TABLE */
+table { width:100%; border-collapse:collapse; margin-bottom:16px; font-size:14px; }
+th { text-align:left; font-weight:600; color:#111; padding:8px 12px; border-bottom:1px solid rgba(0,0,0,0.1); font-size:12px; text-transform:uppercase; letter-spacing:0.06em; }
+td { padding:8px 12px; color:rgba(0,0,0,0.55); border-bottom:1px solid rgba(0,0,0,0.04); }
+td code { font-size:12px; }
+
+/* MERMAID placeholder */
+.diagram { background:rgba(0,0,0,0.02); padding:24px; margin-bottom:16px; text-align:center; min-height:120px; display:flex; align-items:center; justify-content:center; }
+.diagram-content { font-size:13px; color:rgba(0,0,0,0.3); }
+
+/* NOTES */
+.note { font-size:14px; color:rgba(0,0,0,0.5); padding:12px 16px; background:rgba(0,0,0,0.02); margin-bottom:12px; }
+.note strong { color:rgba(0,0,0,0.7); }
+
+/* RELATED */
+.related-link { display:block; font-size:14px; color:rgba(0,0,0,0.5); text-decoration:none; padding:4px 0; transition:color 0.15s; }
+.related-link:hover { color:#111; }
+.related-link code { font-weight:500; }
+
+/* BACK TO GRAPH */
+.back-link { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:500; color:rgba(0,0,0,0.35); text-decoration:none; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:24px; transition:color 0.15s; }
+.back-link:hover { color:#111; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="topbar-logo" href="#">Codespace</a>
+  <div class="topbar-breadcrumb">
+    <a href="#">codespace</a><span>/</span>
+    <a href="#">graph_aggregator</a><span>/</span>
+    aggregate_edges
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-section">
+      <div class="sb-title">Pipeline</div>
+      <a class="sb-item" href="#"><span class="sb-dot" style="background:#2196F3"></span>main()</a>
+      <a class="sb-item" href="#"><span class="sb-dot" style="background:#2196F3"></span>_serve()</a>
+      <a class="sb-item" href="#"><span class="sb-dot" style="background:#2196F3"></span>build_codespace_graph()</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Indexing</div>
+      <a class="sb-item" href="#"><span class="sb-dot" style="background:#4CAF50"></span>scan_repo()</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Symbols</div>
+      <a class="sb-item" href="#"><span class="sb-dot" style="background:#9C27B0"></span>extract_symbols()</a>
+      <a class="sb-item" href="#"><span class="sb-dot" style="background:#9C27B0"></span>build_reverse_index()</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Graph Resolution</div>
+      <a class="sb-item active" href="#"><span class="sb-dot" style="background:#FF9800"></span>aggregate_edges()</a>
+      <a class="sb-item" href="#"><span class="sb-dot" style="background:#FF9800"></span>_resolve()</a>
+      <a class="sb-item" href="#"><span class="sb-dot" style="background:#FF9800"></span>parse_imports()</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Clustering</div>
+      <a class="sb-item" href="#"><span class="sb-dot" style="background:#00BCD4"></span>form_clusters()</a>
+      <a class="sb-item" href="#"><span class="sb-dot" style="background:#00BCD4"></span>name_clusters()</a>
+    </div>
+  </div>
+
+  <div class="main">
+    <a class="back-link" href="preview.html">&larr; Back to Graph</a>
+
+    <h1>aggregate_edges</h1>
+    <p class="subtitle">Resolve unqualified function calls to qualified directed edges across the entire repository.</p>
+
+    <div class="meta-line">
+      <span class="meta-badge" style="color:#FF9800"><span class="dot" style="background:#FF9800"></span>Graph Resolution</span>
+      <span class="meta-tag">Function</span>
+      <span class="meta-file">graph_aggregator.py:35</span>
+    </div>
+
+    <h2>Overview</h2>
+    <p>
+      <code>aggregate_edges</code> is the core graph-building function in Codespace. It takes the flat list of extracted symbols (functions, classes, methods) and the raw file contents, then resolves each symbol's unqualified call targets into fully-qualified directed edges.
+    </p>
+    <p>
+      This is the most critical step in the pipeline because source code only contains unqualified names (e.g., <code>scan_repo</code>), but the graph needs qualified edges (e.g., <code>codespace::indexer::scan_repo</code>). The resolution uses a 4-priority system that leverages import statements, module scope, and global uniqueness to disambiguate call targets.
+    </p>
+    <p>
+      The output is two edge lists: function-level edges (for the detailed graph) and module-level edges (for the high-level view). Both are consumed by <code>build_codespace_graph()</code> during export.
+    </p>
+
+    <h2>Signature</h2>
+    <pre><code>def aggregate_edges(
+    all_symbols: list[SymbolEntry],
+    file_contents: dict[str, str]
+) -> tuple[list[ResolvedEdge], list[ResolvedEdge]]</code></pre>
+
+    <h2>Parameters</h2>
+    <table>
+      <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+      <tr>
+        <td><code>all_symbols</code></td>
+        <td><code>list[SymbolEntry]</code></td>
+        <td>Complete list of symbols extracted from the repository. Each symbol includes its qualified name, calls list, and file path.</td>
+      </tr>
+      <tr>
+        <td><code>file_contents</code></td>
+        <td><code>dict[str, str]</code></td>
+        <td>Mapping of relative file paths to their source code content. Used by <code>parse_imports()</code> to resolve import-based call targets.</td>
+      </tr>
+    </table>
+
+    <h2>Returns</h2>
+    <table>
+      <tr><th>Type</th><th>Description</th></tr>
+      <tr>
+        <td><code>tuple[list[ResolvedEdge], list[ResolvedEdge]]</code></td>
+        <td><strong>func_edges</strong> — Function-level directed edges with call counts.<br><strong>mod_edges</strong> — Module-level aggregated edges (deduplicated by source/target module pair).</td>
+      </tr>
+    </table>
+
+    <h2>How It Works</h2>
+    <ol>
+      <li><strong>Build import maps</strong> — For each file, calls <code>parse_imports()</code> to create a mapping of imported names to their source modules.</li>
+      <li><strong>Build symbol index</strong> — Creates a lookup table of all symbols by their short name (last component of qualified name), grouped by module.</li>
+      <li><strong>Resolve each call</strong> — For every symbol's calls list, invokes <code>_resolve()</code> which applies the 4-priority resolution:
+        <ul>
+          <li><strong>Priority 1:</strong> Name appears in the file's import map → resolve to imported module's symbol</li>
+          <li><strong>Priority 2:</strong> Name exists in the same module → resolve to same-module symbol</li>
+          <li><strong>Priority 3:</strong> Name is globally unique across the repo → resolve to that symbol</li>
+          <li><strong>Priority 4:</strong> Ambiguous → skip (filtered out)</li>
+        </ul>
+      </li>
+      <li><strong>Aggregate edges</strong> — Counts duplicate edges between the same source/target pair, producing weighted edges.</li>
+      <li><strong>Generate module edges</strong> — Collapses function-level edges to module-level by extracting the module component from each qualified name.</li>
+    </ol>
+
+    <h2>Usage Example</h2>
+    <pre><code># After extracting symbols and collecting file contents
+all_symbols = []
+file_contents = {}
+for mod in modules:
+    for f in mod.files:
+        symbols = extract_symbols(f.content, repo_name, mod.slug, f.rel_path)
+        all_symbols.extend(symbols)
+        file_contents[f.rel_path] = f.content
+
+build_reverse_index(all_symbols)
+
+# Resolve the call graph
+func_edges, mod_edges = aggregate_edges(all_symbols, file_contents)
+# func_edges: [ResolvedEdge(source="codespace::cli::main", target="codespace::indexer::scan_repo", weight=3), ...]
+# mod_edges:  [ResolvedEdge(source="codespace::cli", target="codespace::indexer", weight=5), ...]</code></pre>
+
+    <h2>Dependencies</h2>
+    <h3 style="font-size:13px; font-weight:600; color:rgba(0,0,0,0.5); text-transform:none; letter-spacing:0; margin-top:16px; margin-bottom:10px;">Calls (Outgoing)</h3>
+    <table>
+      <tr><th>Symbol</th><th>Module</th><th>Purpose</th></tr>
+      <tr>
+        <td><code>parse_imports()</code></td>
+        <td><span class="sb-dot" style="background:#FF9800"></span>Graph Resolution</td>
+        <td>Parse import statements from each file to build import maps for priority-1 resolution</td>
+      </tr>
+      <tr>
+        <td><code>_resolve()</code></td>
+        <td><span class="sb-dot" style="background:#FF9800"></span>Graph Resolution</td>
+        <td>Resolve individual call names using the 4-priority system</td>
+      </tr>
+    </table>
+
+    <h3 style="font-size:13px; font-weight:600; color:rgba(0,0,0,0.5); text-transform:none; letter-spacing:0; margin-top:16px; margin-bottom:10px;">Called By (Incoming)</h3>
+    <table>
+      <tr><th>Symbol</th><th>Module</th><th>Purpose</th></tr>
+      <tr>
+        <td><code>main()</code></td>
+        <td><span class="sb-dot" style="background:#2196F3"></span>Pipeline</td>
+        <td>Step 3 of the CLI pipeline — resolves the call graph after symbol extraction</td>
+      </tr>
+      <tr>
+        <td><code>test_resolves_cross()</code></td>
+        <td><span class="sb-dot" style="background:#78909C"></span>Tests</td>
+        <td>Verifies cross-module call resolution works correctly</td>
+      </tr>
+    </table>
+
+    <h2>Architecture Context</h2>
+    <canvas id="archCanvas" style="width:100%; margin-bottom:16px; background:rgba(0,0,0,0.015);"></canvas>
+    <script>
+    (function(){
+      const canvas = document.getElementById('archCanvas');
+      const dpr = window.devicePixelRatio || 1;
+      const W = canvas.parentElement.offsetWidth;
+      const H = 340;
+      canvas.style.height = H + 'px';
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      const COL = {
+        symbols: '#9C27B0',
+        graph:   '#FF9800',
+        pipeline:'#2196F3',
+        data:    'rgba(0,0,0,0.25)',
+        bg:      '#fff',
+        text:    '#111',
+        sub:     'rgba(0,0,0,0.4)',
+      };
+
+      function roundRect(x,y,w,h,r,fill,stroke,lw){
+        ctx.beginPath();
+        ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+        ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+        ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+        ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+        ctx.closePath();
+        if(fill){ ctx.fillStyle=fill; ctx.fill(); }
+        if(stroke){ ctx.strokeStyle=stroke; ctx.lineWidth=lw||1; ctx.stroke(); }
+      }
+
+      function arrow(x1,y1,x2,y2,color,dashed){
+        ctx.beginPath();
+        ctx.strokeStyle=color; ctx.lineWidth=1.5;
+        if(dashed) ctx.setLineDash([5,4]); else ctx.setLineDash([]);
+        ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+        ctx.setLineDash([]);
+        // arrowhead
+        const a=Math.atan2(y2-y1,x2-x1), s=7;
+        ctx.beginPath(); ctx.fillStyle=color;
+        ctx.moveTo(x2,y2);
+        ctx.lineTo(x2-s*Math.cos(a-0.4), y2-s*Math.sin(a-0.4));
+        ctx.lineTo(x2-s*Math.cos(a+0.4), y2-s*Math.sin(a+0.4));
+        ctx.closePath(); ctx.fill();
+      }
+
+      function label(text,x,y,size,color,align,weight){
+        ctx.font=(weight||'500')+' '+size+'px Barlow, sans-serif';
+        ctx.fillStyle=color; ctx.textAlign=align||'center'; ctx.textBaseline='middle';
+        ctx.fillText(text,x,y);
+      }
+      function mono(text,x,y,size,color,align){
+        ctx.font='500 '+size+'px JetBrains Mono, monospace';
+        ctx.fillStyle=color; ctx.textAlign=align||'center'; ctx.textBaseline='middle';
+        ctx.fillText(text,x,y);
+      }
+
+      // Layout
+      const cx = W/2, midY=H/2;
+
+      // --- Left inputs ---
+      const inX = 60, in1Y = midY-50, in2Y = midY+20;
+
+      // extract_symbols box
+      roundRect(inX-50, in1Y-16, 130, 32, 3, 'rgba(156,39,176,0.06)', COL.symbols, 1.5);
+      mono('extract_symbols()', inX+15, in1Y, 11, COL.symbols);
+
+      // file_contents box
+      roundRect(inX-50, in2Y-16, 130, 32, 3, 'rgba(0,0,0,0.02)', COL.data, 1);
+      mono('file_contents{}', inX+15, in2Y, 11, COL.sub);
+
+      // --- Data labels on arrows ---
+      const dataLblX = inX + 105;
+
+      // --- Center: aggregate_edges main box ---
+      const boxW = 200, boxH = 110;
+      const boxX = cx - boxW/2 + 20, boxY = midY - boxH/2 - 5;
+      roundRect(boxX, boxY, boxW, boxH, 4, 'rgba(255,152,0,0.04)', COL.graph, 2);
+
+      // Title
+      mono('aggregate_edges()', boxX+boxW/2, boxY+24, 13, COL.graph);
+      // Divider
+      ctx.beginPath(); ctx.moveTo(boxX+16, boxY+42); ctx.lineTo(boxX+boxW-16, boxY+42);
+      ctx.strokeStyle='rgba(255,152,0,0.15)'; ctx.lineWidth=1; ctx.stroke();
+
+      // Sub-functions
+      mono('parse_imports()', boxX+boxW/2, boxY+62, 11, 'rgba(255,152,0,0.6)');
+      mono('_resolve()', boxX+boxW/2, boxY+86, 11, 'rgba(255,152,0,0.6)');
+
+      // --- Arrows: inputs → box ---
+      arrow(inX+65+15, in1Y, boxX, boxY+30, COL.symbols, false);
+      label('all_symbols', (inX+80+boxX)/2, in1Y-14, 10, COL.sub, 'center', '400');
+
+      arrow(inX+65+15, in2Y, boxX, boxY+70, COL.data, true);
+
+      // --- Right outputs ---
+      const outX = boxX + boxW;
+      const out1Y = boxY + 30, out2Y = boxY + 70;
+      const outEndX = outX + 100;
+
+      // func_edges
+      arrow(outX, out1Y, outEndX, out1Y, COL.graph, false);
+      roundRect(outEndX+4, out1Y-14, 100, 28, 3, 'rgba(255,152,0,0.06)', COL.graph, 1);
+      mono('func_edges', outEndX+54, out1Y, 11, COL.graph);
+
+      // mod_edges
+      arrow(outX, out2Y, outEndX, out2Y, COL.graph, false);
+      roundRect(outEndX+4, out2Y-14, 100, 28, 3, 'rgba(255,152,0,0.06)', COL.graph, 1);
+      mono('mod_edges', outEndX+54, out2Y, 11, COL.graph);
+
+      // --- Bottom: build_codespace_graph ---
+      const botY = boxY + boxH + 60;
+      const botW = 190, botH = 34;
+      roundRect(cx-botW/2+20, botY-botH/2, botW, botH, 3, 'rgba(33,150,243,0.06)', COL.pipeline, 1.5);
+      mono('build_codespace_graph()', cx+20, botY, 11, COL.pipeline);
+
+      // Arrow down from box to bottom
+      arrow(cx+20, boxY+boxH, cx+20, botY-botH/2, COL.pipeline, false);
+
+      // --- Top: main() caller ---
+      const topY = boxY - 50;
+      const topW = 80, topH = 30;
+      roundRect(cx-topW/2+20, topY-topH/2, topW, topH, 3, 'rgba(33,150,243,0.06)', COL.pipeline, 1.5);
+      mono('main()', cx+20, topY, 11, COL.pipeline);
+
+      // Arrow from main down to box
+      arrow(cx+20, topY+topH/2, cx+20, boxY, COL.pipeline, false);
+
+      // --- Legend dots ---
+      const legY = H - 20;
+      const legs = [
+        {c:COL.pipeline, l:'Pipeline'},
+        {c:COL.symbols, l:'Symbols'},
+        {c:COL.graph, l:'Graph Resolution'},
+      ];
+      let legX = 16;
+      legs.forEach(({c,l})=>{
+        ctx.beginPath(); ctx.arc(legX+4,legY,4,0,Math.PI*2); ctx.fillStyle=c; ctx.fill();
+        label(l, legX+14, legY, 10, COL.sub, 'left', '500');
+        legX += ctx.measureText(l).width + 30;
+      });
+
+    })();
+    </script>
+
+    <h2>Edge Cases & Notes</h2>
+    <div class="note"><strong>Common names filtered:</strong> Builtins like <code>print</code>, <code>len</code>, <code>range</code>, <code>str</code>, <code>int</code>, <code>list</code>, <code>dict</code> are excluded via the <code>COMMON_NAMES</code> set to avoid noise in the graph.</div>
+    <div class="note"><strong>Ambiguous calls dropped:</strong> When a call name matches multiple symbols across different modules and isn't imported, the edge is silently dropped rather than guessing. This is a deliberate design choice favoring precision over recall.</div>
+    <div class="note"><strong>Self-edges excluded:</strong> A symbol calling itself (recursion) does not produce an edge.</div>
+
+    <h2>Related Symbols</h2>
+    <a class="related-link" href="#"><code>_resolve()</code> — Internal resolution logic, called once per unqualified call name</a>
+    <a class="related-link" href="#"><code>parse_imports()</code> — Import parser that enables priority-1 resolution</a>
+    <a class="related-link" href="#"><code>ResolvedEdge</code> — Dataclass for the output edges</a>
+    <a class="related-link" href="#"><code>build_codespace_graph()</code> — Consumer of the edge lists during export</a>
+    <a class="related-link" href="#"><code>extract_symbols()</code> — Producer of the input symbols</a>
+
+    <h2>Changelog</h2>
+    <table>
+      <tr><th>Date</th><th>Change</th><th>Commit</th></tr>
+      <tr><td>2026-03-21</td><td>Initial implementation with 4-priority resolution</td><td><code>174470b</code></td></tr>
+    </table>
+
+  </div>
+</div>
+
+</body>
+</html>

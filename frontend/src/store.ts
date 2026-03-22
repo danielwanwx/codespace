@@ -37,6 +37,14 @@ interface AppState {
   setFocusNodeId: (id: string | null) => void
   setZoomLevel: (level: 'repo' | 'module' | 'function') => void
   toggleCluster: (id: string) => void
+  // LLM settings
+  llmProvider: 'anthropic' | 'openai' | null
+  llmApiKey: string
+  llmModel: string
+  setLLMSettings: (provider: 'anthropic' | 'openai' | null, key: string, model: string) => void
+  // Explanation cache
+  explanationCache: Record<string, string>
+  setExplanation: (nodeId: string, text: string) => void
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -55,6 +63,16 @@ export const useStore = create<AppState>((set) => ({
     else next.add(id)
     return { expandedClusters: next }
   }),
+  // LLM settings
+  llmProvider: null,
+  llmApiKey: '',
+  llmModel: '',
+  setLLMSettings: (provider, key, model) => set({ llmProvider: provider, llmApiKey: key, llmModel: model }),
+  // Explanation cache
+  explanationCache: {},
+  setExplanation: (nodeId, text) => set((state) => ({
+    explanationCache: { ...state.explanationCache, [nodeId]: text },
+  })),
 }))
 
 export type { CodespaceGraph, GraphNode, GraphEdge }

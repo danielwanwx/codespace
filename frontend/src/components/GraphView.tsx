@@ -1,12 +1,13 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { Graph, ComboEvent, NodeEvent } from '@antv/g6'
-import type { NodeData, EdgeData, ComboData, GraphData, IElementEvent } from '@antv/g6'
+import type { NodeData, EdgeData, ComboData, GraphData, IElementEvent, ElementDatum } from '@antv/g6'
 import { useStore } from '../store'
 import type { CodespaceGraph, GraphNode } from '../store'
 
 // --- Color palette ---
 const MODULE_COLORS = ['#3B82F6', '#22C55E', '#A855F7', '#F97316'] as const
 const EDGE_COLOR = '#4B5563'
+const EDGE_HOVER_COLOR = '#9CA3AF'
 
 /** Convert hex to rgba string */
 function hexToRgba(hex: string, alpha: number): string {
@@ -63,6 +64,19 @@ export function GraphView() {
           const nodeType = d.data?.nodeType as string
           if (nodeType === 'class') return 'diamond'
           return 'circle'
+        },
+        state: {
+          active: {
+            lineWidth: 3,
+            shadowColor: '#818CF8',
+            shadowBlur: 16,
+            fillOpacity: 0.9,
+          },
+          inactive: {
+            fillOpacity: 0.2,
+            strokeOpacity: 0.3,
+            labelOpacity: 0.4,
+          },
         },
         style: (d: NodeData) => {
           const nodeType = d.data?.nodeType as string
@@ -130,14 +144,30 @@ export function GraphView() {
         },
       },
       edge: {
+        state: {
+          active: {
+            stroke: EDGE_HOVER_COLOR,
+            strokeOpacity: 1,
+            lineWidth: 3,
+          },
+          inactive: {
+            strokeOpacity: 0.15,
+          },
+        },
         style: (d: EdgeData) => {
           const weight = (d.data?.weight as number) || 1
           const confidence = (d.data?.confidence as string) || 'medium'
           const confidenceOpacity = confidence === 'high' ? 0.8 : confidence === 'low' ? 0.3 : 0.5
+          // Thickness proportional to weight, clamped to 1-6px range
+          const lineWidth = Math.max(1, Math.min(weight * 1.2, 6))
+          // Line dash based on confidence: solid (high), dashed (medium), dotted (low)
+          const lineDash =
+            confidence === 'high' ? undefined : confidence === 'low' ? [2, 4] : [6, 4]
           return {
             stroke: EDGE_COLOR,
-            lineWidth: Math.min(weight * 1.5, 8),
+            lineWidth,
             strokeOpacity: confidenceOpacity,
+            lineDash,
             endArrow: true,
             endArrowSize: 6,
             endArrowFill: EDGE_COLOR,
@@ -183,6 +213,48 @@ export function GraphView() {
           trigger: 'dblclick',
           onExpand: (id: string) => handleComboExpand(id),
           onCollapse: (id: string) => handleComboExpand(id),
+        },
+        {
+          type: 'hover-activate',
+          degree: 1,
+          inactiveState: 'inactive',
+          state: 'active',
+        },
+      ],
+      plugins: [
+        {
+          type: 'minimap',
+          size: [200, 150] as [number, number],
+          position: 'left-bottom' as const,
+          containerStyle: {
+            border: '1px solid #374151',
+            borderRadius: '8px',
+            backgroundColor: '#111827',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+          },
+          maskStyle: {
+            border: '2px solid #6366F1',
+            backgroundColor: 'rgba(99,102,241,0.15)',
+          },
+        },
+        {
+          type: 'tooltip',
+          getContent: (_event: IElementEvent, items: ElementDatum[]) => {
+            const item = items?.[0]
+            if (!item) return Promise.resolve('')
+            const d = item as Record<string, unknown>
+            const label = (d.label as string) || (d.id as string) || ''
+            const nodeType = (d.nodeType as string) || (d.type as string) || ''
+            const docstring = (d.docstring as string) || (d.summary_l1 as string) || ''
+            const firstLine = docstring ? docstring.split('\n')[0].slice(0, 120) : ''
+            return Promise.resolve(
+              `<div style="background:#1F2937;color:#F3F4F6;padding:8px 12px;border-radius:6px;font-size:13px;max-width:300px;border:1px solid #374151;">
+                <strong>${label}</strong>
+                ${nodeType ? `<br/><span style="color:#9CA3AF;font-size:11px;">${nodeType}</span>` : ''}
+                ${firstLine ? `<br/><span style="color:#D1D5DB;font-size:12px;">${firstLine}</span>` : ''}
+              </div>`,
+            )
+          },
         },
       ],
     })

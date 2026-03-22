@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useStore } from '../store'
 import type { GraphNode, GraphEdge } from '../store'
+import { explainFunction } from '../lib/llm'
 
 /** Extract a short display name from a node's label (strip signature noise) */
 function displayName(node: GraphNode): string {
@@ -286,13 +288,90 @@ function FunctionPanel({ node }: { node: GraphNode }) {
         </>
       )}
 
-      {/* Explain with AI placeholder */}
-      <div className="px-5 py-4">
-        <div className="w-full py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-center text-sm text-gray-400 cursor-not-allowed select-none">
-          Explain with AI
-        </div>
-      </div>
+      {/* Explain with AI */}
+      <ExplainWithAI node={node} />
     </>
+  )
+}
+
+// --- Explain with AI ---
+
+function ExplainWithAI({ node }: { node: GraphNode }) {
+  const llmProvider = useStore((s) => s.llmProvider)
+  const llmApiKey = useStore((s) => s.llmApiKey)
+  const llmModel = useStore((s) => s.llmModel)
+  const explanationCache = useStore((s) => s.explanationCache)
+  const setExplanation = useStore((s) => s.setExplanation)
+  const graph = useStore((s) => s.graph)
+
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const cached = explanationCache[node.id]
+  const hasKey = llmProvider !== null && llmApiKey.length > 0
+
+  async function handleExplain() {
+    if (!hasKey || !llmProvider) return
+    setLoading(true)
+    setError(null)
+    try {
+      const signature = (node.signature as string) ?? node.label
+      const docstring = (node.docstring as string) ?? ''
+      const calls = (node.calls as string[]) ?? []
+      const calledBy = (node.called_by as string[]) ?? []
+      // Derive module name from parent or node id
+      const parentId = node.parent ?? ''
+      const moduleName = parentId ? shortName(parentId) : node.repo
+      const globalContext = graph?.global_context ?? ''
+
+      const result = await explainFunction(llmProvider, llmApiKey, llmModel, {
+        signature,
+        docstring,
+        calls,
+        calledBy,
+        moduleName,
+        globalContext,
+      })
+      setExplanation(node.id, result)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to get explanation')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="px-5 py-4">
+      {cached ? (
+        <div className="text-sm text-gray-300 leading-relaxed bg-gray-800/50 border border-gray-700/60 rounded-lg p-3">
+          {cached}
+        </div>
+      ) : !hasKey ? (
+        <div className="w-full py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-center text-sm text-gray-500 select-none">
+          Configure API key in settings
+        </div>
+      ) : (
+        <>
+          <button
+            onClick={handleExplain}
+            disabled={loading}
+            className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <span className="inline-block w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                Explaining...
+              </>
+            ) : (
+              'Explain with AI'
+            )}
+          </button>
+          {error && (
+            <p className="mt-2 text-xs text-red-400">{error}</p>
+          )}
+        </>
+      )}
+    </div>
   )
 }
 

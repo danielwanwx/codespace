@@ -4,10 +4,10 @@ import type { NodeData, EdgeData, ComboData, GraphData, IElementEvent, ElementDa
 import { useStore } from '../store'
 import type { CodespaceGraph, GraphNode } from '../store'
 
-// --- Color palette ---
-const MODULE_COLORS = ['#3B82F6', '#22C55E', '#A855F7', '#F97316'] as const
-const EDGE_COLOR = '#4B5563'
-const EDGE_HOVER_COLOR = '#9CA3AF'
+// --- SpaceX HUD Color palette ---
+const MODULE_COLORS = ['#4FC3F7', '#81C784', '#CE93D8', '#FFB74D'] as const
+const EDGE_COLOR = '#333c41'
+const EDGE_LABEL_COLOR = '#56646a'
 
 /** Convert hex to rgba string */
 function hexToRgba(hex: string, alpha: number): string {
@@ -67,15 +67,15 @@ export function GraphView() {
         },
         state: {
           active: {
-            lineWidth: 3,
-            shadowColor: '#818CF8',
-            shadowBlur: 16,
+            lineWidth: 2,
+            shadowColor: '#00E5FF',
+            shadowBlur: 12,
             fillOpacity: 0.9,
           },
           inactive: {
-            fillOpacity: 0.2,
-            strokeOpacity: 0.3,
-            labelOpacity: 0.4,
+            fillOpacity: 0.15,
+            strokeOpacity: 0.2,
+            labelOpacity: 0.3,
           },
         },
         style: (d: NodeData) => {
@@ -87,55 +87,58 @@ export function GraphView() {
 
           const base: Record<string, unknown> = {
             labelText: (d.data?.label as string) || String(d.id),
-            labelFill: '#E5E7EB',
-            labelFontSize: 11,
+            labelFill: '#969c99',
+            labelFontSize: 10,
+            labelFontFamily: '"JetBrains Mono", monospace',
             labelPlacement: 'bottom',
           }
 
           if (nodeType === 'class') {
             Object.assign(base, {
-              size: 35,
-              fill: modColor,
-              fillOpacity: 0.7,
-              stroke: modColor,
-              lineWidth: 2,
+              size: 28,
+              fill: '#181f22',
+              fillOpacity: 1,
+              stroke: '#4FC3F7',
+              lineWidth: 1.5,
             })
           } else if (nodeType === 'function') {
             Object.assign(base, {
-              size: 24,
-              fill: modColor,
-              fillOpacity: 0.5,
-              stroke: modColor,
-              lineWidth: 1.5,
+              size: 18,
+              fill: '#181f22',
+              fillOpacity: 1,
+              stroke: '#00E5FF',
+              lineWidth: 1,
             })
           } else if (nodeType === 'module') {
             // Module nodes shown at module zoom level (non-combo)
             Object.assign(base, {
-              size: 40,
-              fill: modColor,
-              fillOpacity: 0.4,
+              size: 36,
+              fill: '#181f22',
+              fillOpacity: 1,
               stroke: modColor,
-              lineWidth: 2,
-              labelFontSize: 13,
+              lineWidth: 1.5,
+              labelFontSize: 12,
+              labelFill: modColor,
             })
           } else {
             // repo
             Object.assign(base, {
-              size: 50,
-              fill: '#6366F1',
-              fillOpacity: 0.6,
-              stroke: '#818CF8',
+              size: 44,
+              fill: '#181f22',
+              fillOpacity: 1,
+              stroke: '#00E5FF',
               lineWidth: 2,
-              labelFontSize: 14,
+              labelFontSize: 13,
+              labelFill: '#ededea',
             })
           }
 
           // Selected node highlight ring
           if (isSelected) {
             Object.assign(base, {
-              stroke: '#FACC15',
-              lineWidth: 4,
-              shadowColor: '#FACC15',
+              stroke: '#00E5FF',
+              lineWidth: 2,
+              shadowColor: '#00E5FF',
               shadowBlur: 12,
             })
           }
@@ -146,30 +149,32 @@ export function GraphView() {
       edge: {
         state: {
           active: {
-            stroke: EDGE_HOVER_COLOR,
-            strokeOpacity: 1,
-            lineWidth: 3,
+            stroke: '#00E5FF',
+            strokeOpacity: 0.8,
+            lineWidth: 1.5,
           },
           inactive: {
-            strokeOpacity: 0.15,
+            strokeOpacity: 0.08,
           },
         },
         style: (d: EdgeData) => {
           const weight = (d.data?.weight as number) || 1
           const confidence = (d.data?.confidence as string) || 'medium'
-          const confidenceOpacity = confidence === 'high' ? 0.8 : confidence === 'low' ? 0.3 : 0.5
-          // Thickness proportional to weight, clamped to 1-6px range
-          const lineWidth = Math.max(1, Math.min(weight * 1.2, 6))
+          // Weight affects opacity, not thickness
+          const weightOpacity = Math.min(0.3 + weight * 0.15, 0.9)
+          const confidenceOpacity = confidence === 'high' ? weightOpacity : confidence === 'low' ? weightOpacity * 0.3 : weightOpacity * 0.6
+          // Keep lines thin: 1-2px
+          const lineWidth = confidence === 'high' ? 1.5 : 1
           // Line dash based on confidence: solid (high), dashed (medium), dotted (low)
           const lineDash =
             confidence === 'high' ? undefined : confidence === 'low' ? [2, 4] : [6, 4]
           return {
-            stroke: EDGE_COLOR,
+            stroke: EDGE_LABEL_COLOR,
             lineWidth,
             strokeOpacity: confidenceOpacity,
             lineDash,
             endArrow: true,
-            endArrowSize: 6,
+            endArrowSize: 4,
             endArrowFill: EDGE_COLOR,
           }
         },
@@ -180,20 +185,22 @@ export function GraphView() {
           const modIdx = (d.data?.moduleIndex as number) ?? 0
           const modColor = getModuleColor(modIdx)
           return {
-            fill: hexToRgba(modColor, 0.12),
-            stroke: hexToRgba(modColor, 0.4),
-            lineWidth: 1.5,
-            radius: 8,
-            labelText: (d.data?.label as string) || String(d.id),
-            labelFill: modColor,
-            labelFontSize: 13,
-            labelFontWeight: 600,
+            fill: hexToRgba(modColor, 0.06),
+            stroke: hexToRgba(modColor, 0.3),
+            lineWidth: 1,
+            radius: 0,
+            labelText: ((d.data?.label as string) || String(d.id)).toUpperCase(),
+            labelFill: hexToRgba(modColor, 0.6),
+            labelFontSize: 10,
+            labelFontWeight: 500,
+            labelFontFamily: '"JetBrains Mono", monospace',
             labelPlacement: 'top',
+            labelLetterSpacing: 1.5,
             padding: 20,
             collapsedSize: [60, 40],
-            collapsedFill: hexToRgba(modColor, 0.25),
-            collapsedStroke: modColor,
-            collapsedLineWidth: 2,
+            collapsedFill: hexToRgba(modColor, 0.12),
+            collapsedStroke: hexToRgba(modColor, 0.4),
+            collapsedLineWidth: 1,
             collapsedMarker: false,
           }
         },
@@ -227,14 +234,14 @@ export function GraphView() {
           size: [200, 150] as [number, number],
           position: 'left-bottom' as const,
           containerStyle: {
-            border: '1px solid #374151',
-            borderRadius: '8px',
-            backgroundColor: '#111827',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+            border: '1px solid #333c41',
+            borderRadius: '0px',
+            backgroundColor: 'rgba(24, 31, 34, 0.9)',
+            boxShadow: 'none',
           },
           maskStyle: {
-            border: '2px solid #6366F1',
-            backgroundColor: 'rgba(99,102,241,0.15)',
+            border: '1px solid #00E5FF',
+            backgroundColor: 'rgba(0, 229, 255, 0.08)',
           },
         },
         {
@@ -248,10 +255,10 @@ export function GraphView() {
             const docstring = (d.docstring as string) || (d.summary_l1 as string) || ''
             const firstLine = docstring ? docstring.split('\n')[0].slice(0, 120) : ''
             return Promise.resolve(
-              `<div style="background:#1F2937;color:#F3F4F6;padding:8px 12px;border-radius:6px;font-size:13px;max-width:300px;border:1px solid #374151;">
-                <strong>${label}</strong>
-                ${nodeType ? `<br/><span style="color:#9CA3AF;font-size:11px;">${nodeType}</span>` : ''}
-                ${firstLine ? `<br/><span style="color:#D1D5DB;font-size:12px;">${firstLine}</span>` : ''}
+              `<div style="background:rgba(24,31,34,0.95);color:#ededea;padding:8px 12px;font-size:12px;max-width:300px;border:1px solid #333c41;font-family:'JetBrains Mono',monospace;backdrop-filter:blur(12px);">
+                <strong style="letter-spacing:0.05em;">${label}</strong>
+                ${nodeType ? `<br/><span style="color:#56646a;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;">${nodeType}</span>` : ''}
+                ${firstLine ? `<br/><span style="color:#969c99;font-size:11px;">${firstLine}</span>` : ''}
               </div>`,
             )
           },
@@ -319,9 +326,6 @@ function transformData(
   const modules = data.nodes.filter((n) => n.type === 'module')
   const combos: ComboData[] = []
   const nodes: NodeData[] = []
-
-  // Add repo nodes (hidden from combos for now)
-  // We skip repo nodes in module/function views -- combos represent modules
 
   // Create combos for each module
   for (const mod of modules) {

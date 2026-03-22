@@ -24,17 +24,17 @@ export function SettingsBar() {
       {/* Gear icon button */}
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-4 right-4 z-50 w-10 h-10 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-colors shadow-lg"
+        className="fixed bottom-4 right-4 z-50 w-10 h-10 border border-[var(--panel-border)] bg-[rgba(24,31,34,0.9)] backdrop-blur-sm flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent-cyan)] hover:border-[var(--accent-cyan)] transition-colors"
         aria-label="Settings"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="18"
-          height="18"
+          width="16"
+          height="16"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2"
+          strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
         >
@@ -48,31 +48,31 @@ export function SettingsBar() {
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-[rgba(1,2,3,0.7)]"
             onClick={() => setOpen(false)}
           />
 
           {/* Dialog */}
-          <div className="relative bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-[380px] p-6 z-10">
-            <h3 className="text-lg font-semibold text-white mb-4">
+          <div className="relative glass-panel corner-accents w-[380px] p-6 z-10">
+            <h3 className="text-[12px] font-medium uppercase tracking-[0.15em] text-[var(--text-primary)] mb-5">
               LLM Settings
             </h3>
 
             {/* Provider selector */}
-            <label className="block text-sm text-gray-400 mb-1">Provider</label>
+            <label className="block text-[11px] uppercase tracking-[0.1em] text-[var(--text-muted)] mb-1">Provider</label>
             <select
               value={localProvider}
               onChange={(e) =>
                 setLocalProvider(e.target.value as 'anthropic' | 'openai')
               }
-              className="w-full mb-4 px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm focus:outline-none focus:border-blue-500"
+              className="w-full mb-4 px-3 py-2 bg-transparent border-b border-[var(--panel-border)] text-[var(--text-primary)] text-[13px] focus:outline-none focus:border-[var(--accent-cyan)] appearance-none cursor-pointer"
             >
-              <option value="anthropic">Anthropic</option>
-              <option value="openai">OpenAI</option>
+              <option value="anthropic" className="bg-[var(--panel-bg)]">Anthropic</option>
+              <option value="openai" className="bg-[var(--panel-bg)]">OpenAI</option>
             </select>
 
             {/* API Key */}
-            <label className="block text-sm text-gray-400 mb-1">API Key</label>
+            <label className="block text-[11px] uppercase tracking-[0.1em] text-[var(--text-muted)] mb-1">API Key</label>
             <input
               type="password"
               value={localKey}
@@ -82,13 +82,13 @@ export function SettingsBar() {
                   ? 'sk-ant-...'
                   : 'sk-...'
               }
-              className="w-full mb-4 px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-blue-500"
+              className="w-full mb-4 px-3 py-2 bg-transparent border-b border-[var(--panel-border)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-cyan)]"
             />
 
             {/* Model */}
-            <label className="block text-sm text-gray-400 mb-1">
+            <label className="block text-[11px] uppercase tracking-[0.1em] text-[var(--text-muted)] mb-1">
               Model{' '}
-              <span className="text-gray-600">
+              <span className="text-[var(--text-muted)]" style={{ opacity: 0.5 }}>
                 (default:{' '}
                 {localProvider === 'anthropic'
                   ? 'claude-sonnet-4-5-20250929'
@@ -105,20 +105,20 @@ export function SettingsBar() {
                   ? 'claude-sonnet-4-5-20250929'
                   : 'gpt-4o-mini'
               }
-              className="w-full mb-6 px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-blue-500"
+              className="w-full mb-6 px-3 py-2 bg-transparent border-b border-[var(--panel-border)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-cyan)]"
             />
 
             {/* Actions */}
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setOpen(false)}
-                className="px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white transition-colors"
+                className="px-4 py-2 text-[11px] uppercase tracking-[0.15em] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
-                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition-colors"
+                className="px-4 py-2 border border-[var(--accent-cyan)] text-[var(--accent-cyan)] text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-[rgba(0,229,255,0.08)] transition-colors"
               >
                 Save
               </button>

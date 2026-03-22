@@ -3,10 +3,10 @@ import { useStore } from '../store'
 import type { GraphNode } from '../store'
 
 const TYPE_BADGE_COLORS: Record<string, string> = {
-  module: 'bg-blue-600',
-  function: 'bg-green-600',
-  class: 'bg-purple-600',
-  repo: 'bg-indigo-600',
+  module: 'border-l-[var(--accent-blue)]',
+  function: 'border-l-[#81C784]',
+  class: 'border-l-[#CE93D8]',
+  repo: 'border-l-[var(--accent-cyan)]',
 }
 
 export function SearchBar() {
@@ -84,20 +84,8 @@ export function SearchBar() {
       className="absolute top-4 left-4 z-10 w-72"
     >
       {/* Search input */}
-      <div className="relative">
-        <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
-        </svg>
+      <div className="relative glass-panel flex items-center">
+        <span className="pl-3 text-[var(--accent-cyan)] text-[13px] select-none shrink-0">&gt;_</span>
         <input
           ref={inputRef}
           type="text"
@@ -108,14 +96,14 @@ export function SearchBar() {
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder="Search nodes..."
-          className="w-full pl-10 pr-3 py-2 text-sm bg-gray-800 text-white border border-gray-700 rounded-lg placeholder-gray-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+          placeholder="SEARCH NODES..."
+          className="w-full pl-2 pr-3 py-2 text-[13px] bg-transparent text-[var(--text-primary)] border-none placeholder-[var(--text-muted)] focus:outline-none placeholder:uppercase placeholder:tracking-[0.1em] placeholder:text-[11px]"
         />
       </div>
 
       {/* Results dropdown */}
       {isOpen && query.trim() && results.length > 0 && (
-        <ul className="mt-1 max-h-80 overflow-y-auto rounded-lg border border-gray-700 bg-gray-800 shadow-lg">
+        <ul className="mt-1 max-h-80 overflow-y-auto glass-panel">
           {results.map((node) => {
             const parentLabel = node.parent
               ? parentLabelMap.get(node.parent)
@@ -125,18 +113,18 @@ export function SearchBar() {
                 <button
                   type="button"
                   onClick={() => handleSelect(node.id)}
-                  className="w-full text-left px-3 py-2 hover:bg-gray-700 transition-colors flex items-center gap-2"
+                  className="w-full text-left px-3 py-2 hover:bg-[rgba(0,229,255,0.06)] transition-colors flex items-center gap-2"
                 >
                   <span
-                    className={`shrink-0 px-1.5 py-0.5 text-[10px] font-semibold uppercase rounded ${TYPE_BADGE_COLORS[node.type] ?? 'bg-gray-600'} text-white`}
+                    className={`shrink-0 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.1em] border-l-2 ${TYPE_BADGE_COLORS[node.type] ?? 'border-l-[var(--panel-border)]'} text-[var(--text-muted)] bg-[rgba(24,31,34,0.5)]`}
                   >
                     {node.type}
                   </span>
-                  <span className="truncate text-sm text-gray-100">
+                  <span className="truncate text-[13px] text-[var(--text-primary)]">
                     {node.label}
                   </span>
                   {parentLabel && (
-                    <span className="ml-auto shrink-0 text-xs text-gray-500">
+                    <span className="ml-auto shrink-0 text-[11px] text-[var(--text-muted)]">
                       {parentLabel}
                     </span>
                   )}
@@ -149,7 +137,7 @@ export function SearchBar() {
 
       {/* No results message */}
       {isOpen && query.trim() && results.length === 0 && (
-        <div className="mt-1 px-3 py-2 rounded-lg border border-gray-700 bg-gray-800 text-sm text-gray-500">
+        <div className="mt-1 px-3 py-2 glass-panel text-[12px] text-[var(--text-muted)] uppercase tracking-[0.1em]">
           No matching nodes
         </div>
       )}

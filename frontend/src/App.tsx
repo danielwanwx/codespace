@@ -22,7 +22,7 @@ function App() {
   const repoName = graph?.metadata?.repos?.[0] ?? ''
 
   return (
-    <div className="h-screen w-screen bg-gray-950 text-white flex flex-col">
+    <div className="h-screen w-screen bg-[#010203] text-[#ededea] flex flex-col">
       <Header repoName={repoName} />
       <div className="flex-1 flex min-h-0">
         <div className="flex-1 relative">

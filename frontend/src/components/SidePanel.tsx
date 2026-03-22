@@ -20,18 +20,35 @@ function shortName(qualifiedId: string): string {
 // --- Sub-components ---
 
 function SectionDivider() {
-  return <div className="border-t border-gray-700/60" />
+  return <div className="border-t border-[var(--panel-border)]" style={{ opacity: 0.5 }} />
+}
+
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="text-[11px] font-medium uppercase tracking-[0.1em] text-[var(--text-muted)] mb-2 pb-1 border-b border-[var(--panel-border)]" style={{ borderBottomWidth: '1px' }}>
+      {children}
+    </h3>
+  )
 }
 
 function CloseButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-md text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+      className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent-cyan)] transition-colors"
       aria-label="Close panel"
     >
       &times;
     </button>
+  )
+}
+
+function DataField({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="mb-1">
+      <span className="text-[11px] uppercase tracking-[0.1em] text-[var(--text-muted)]">{label}</span>
+      <div className="text-[14px] text-[var(--text-primary)]">{value}</div>
+    </div>
   )
 }
 
@@ -58,19 +75,20 @@ function ModulePanel({ node, children, edges }: {
     <>
       {/* Header */}
       <div className="px-5 pt-5 pb-3 pr-12">
-        <h2 className="text-lg font-semibold text-white leading-tight">
+        <h2 className="text-sm font-medium uppercase tracking-[0.15em] text-[var(--text-primary)] leading-tight">
           {node.semantic_label || node.label}
         </h2>
         {path && (
-          <p className="text-sm text-gray-400 mt-0.5 font-mono">{path}</p>
+          <p className="text-[12px] text-[var(--text-muted)] mt-0.5">{path}</p>
         )}
       </div>
 
       <SectionDivider />
 
       {/* Stats */}
-      <div className="px-5 py-3 text-sm text-gray-300">
-        {fileCount} file{fileCount !== 1 ? 's' : ''} &middot; {symbolCount} symbol{symbolCount !== 1 ? 's' : ''}
+      <div className="px-5 py-3 flex gap-4">
+        <DataField label="files" value={fileCount} />
+        <DataField label="symbols" value={symbolCount} />
       </div>
 
       <SectionDivider />
@@ -79,8 +97,8 @@ function ModulePanel({ node, children, edges }: {
       {functions.length > 0 && (
         <>
           <div className="px-5 py-3">
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Functions</h3>
-            <ul className="space-y-1">
+            <SectionHeader>Functions</SectionHeader>
+            <ul className="space-y-0.5">
               {functions.map((fn) => (
                 <FunctionListItem key={fn.id} node={fn} />
               ))}
@@ -94,12 +112,12 @@ function ModulePanel({ node, children, edges }: {
       {classes.length > 0 && (
         <>
           <div className="px-5 py-3">
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Classes</h3>
-            <ul className="space-y-1">
+            <SectionHeader>Classes</SectionHeader>
+            <ul className="space-y-0.5">
               {classes.map((cls) => (
-                <li key={cls.id} className="text-sm text-gray-300 flex items-start gap-1.5">
-                  <span className="text-gray-500 mt-0.5 shrink-0">&loz;</span>
-                  <span className="font-mono">{displayName(cls)}</span>
+                <li key={cls.id} className="text-[13px] text-[var(--text-secondary)] flex items-start gap-1.5 py-0.5">
+                  <span className="text-[var(--accent-blue)] mt-0.5 shrink-0">&loz;</span>
+                  <span>{displayName(cls)}</span>
                 </li>
               ))}
             </ul>
@@ -111,23 +129,23 @@ function ModulePanel({ node, children, edges }: {
       {/* Connections */}
       {(outgoing.length > 0 || incoming.length > 0) && (
         <div className="px-5 py-3">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Connections</h3>
-          <ul className="space-y-1 text-sm">
+          <SectionHeader>Connections</SectionHeader>
+          <ul className="space-y-0.5 text-[13px]">
             {outgoing.map((e, i) => (
-              <li key={`out-${i}`} className="text-gray-300 flex items-start gap-1.5">
-                <span className="text-blue-400 shrink-0">&rarr;</span>
+              <li key={`out-${i}`} className="text-[var(--text-secondary)] flex items-start gap-1.5">
+                <span className="text-[var(--accent-cyan)] shrink-0">&rarr;</span>
                 <span>
-                  <span className="font-mono">{shortName(e.target)}</span>
-                  <span className="text-gray-500 ml-1">({e.weight} call{e.weight !== 1 ? 's' : ''})</span>
+                  <span>{shortName(e.target)}</span>
+                  <span className="text-[var(--text-muted)] ml-1">({e.weight} call{e.weight !== 1 ? 's' : ''})</span>
                 </span>
               </li>
             ))}
             {incoming.map((e, i) => (
-              <li key={`in-${i}`} className="text-gray-300 flex items-start gap-1.5">
-                <span className="text-green-400 shrink-0">&larr;</span>
+              <li key={`in-${i}`} className="text-[var(--text-secondary)] flex items-start gap-1.5">
+                <span className="text-[#81C784] shrink-0">&larr;</span>
                 <span>
-                  <span className="font-mono">{shortName(e.source)}</span>
-                  <span className="text-gray-500 ml-1">({e.weight} call{e.weight !== 1 ? 's' : ''})</span>
+                  <span>{shortName(e.source)}</span>
+                  <span className="text-[var(--text-muted)] ml-1">({e.weight} call{e.weight !== 1 ? 's' : ''})</span>
                 </span>
               </li>
             ))}
@@ -145,11 +163,11 @@ function FunctionListItem({ node }: { node: GraphNode }) {
   const shortSig = sig.length > 40 ? displayName(node) + '(...)' : sig
 
   return (
-    <li className="text-sm text-gray-300 flex items-start gap-1.5">
-      <span className="text-gray-500 mt-0.5 shrink-0">&bull;</span>
+    <li className="text-[13px] text-[var(--text-secondary)] flex items-start gap-1.5">
+      <span className="text-[var(--text-muted)] mt-0.5 shrink-0">&bull;</span>
       <button
         onClick={() => selectNode(node.id)}
-        className="font-mono text-left hover:text-blue-400 transition-colors truncate"
+        className="text-left hover:text-[var(--accent-cyan)] transition-colors truncate py-0.5 border-l-2 border-transparent hover:border-[var(--accent-cyan)] pl-1 -ml-1"
         title={sig}
       >
         {shortSig}
@@ -191,14 +209,14 @@ function FunctionPanel({ node }: { node: GraphNode }) {
     <>
       {/* Header */}
       <div className="px-5 pt-5 pb-3 pr-12">
-        <h2 className="text-lg font-semibold text-white leading-tight">
+        <h2 className="text-sm font-medium uppercase tracking-[0.15em] text-[var(--text-primary)] leading-tight">
           {displayName(node)}
         </h2>
         {location && (
-          <p className="text-sm text-gray-400 mt-0.5 font-mono">{location}</p>
+          <p className="text-[12px] text-[var(--text-muted)] mt-0.5">{location}</p>
         )}
         {className && (
-          <p className="text-xs text-gray-500 mt-0.5">class: {className}</p>
+          <p className="text-[11px] text-[var(--text-muted)] mt-0.5 uppercase tracking-[0.1em]">class: {className}</p>
         )}
       </div>
 
@@ -208,7 +226,7 @@ function FunctionPanel({ node }: { node: GraphNode }) {
       {signature && (
         <>
           <div className="px-5 py-3">
-            <pre className="text-sm text-blue-300 font-mono whitespace-pre-wrap break-all leading-relaxed">
+            <pre className="text-[13px] text-[var(--accent-blue)] whitespace-pre-wrap break-all leading-relaxed">
               {signature}
             </pre>
           </div>
@@ -220,7 +238,7 @@ function FunctionPanel({ node }: { node: GraphNode }) {
       {docstring && (
         <>
           <div className="px-5 py-3">
-            <p className="text-sm text-gray-300 italic leading-relaxed">
+            <p className="text-[13px] text-[var(--text-secondary)] italic leading-relaxed">
               &ldquo;{docstring}&rdquo;
             </p>
           </div>
@@ -232,22 +250,22 @@ function FunctionPanel({ node }: { node: GraphNode }) {
       {calls.length > 0 && (
         <>
           <div className="px-5 py-3">
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Calls</h3>
-            <ul className="space-y-1">
+            <SectionHeader>Calls</SectionHeader>
+            <ul className="space-y-0.5">
               {calls.map((callName) => {
                 const target = nodeMap.get(callName)
                 return (
-                  <li key={callName} className="text-sm text-gray-300 flex items-start gap-1.5">
-                    <span className="text-gray-500 mt-0.5 shrink-0">&bull;</span>
+                  <li key={callName} className="text-[13px] text-[var(--text-secondary)] flex items-start gap-1.5">
+                    <span className="text-[var(--text-muted)] mt-0.5 shrink-0">&bull;</span>
                     {target ? (
                       <button
                         onClick={() => selectNode(target.id)}
-                        className="font-mono text-left hover:text-blue-400 transition-colors"
+                        className="text-left hover:text-[var(--accent-cyan)] transition-colors border-l-2 border-transparent hover:border-[var(--accent-cyan)] pl-1 -ml-1 py-0.5"
                       >
                         {callName}
                       </button>
                     ) : (
-                      <span className="font-mono text-gray-500">{callName}</span>
+                      <span className="text-[var(--text-muted)]">{callName}</span>
                     )}
                   </li>
                 )
@@ -262,22 +280,22 @@ function FunctionPanel({ node }: { node: GraphNode }) {
       {calledBy.length > 0 && (
         <>
           <div className="px-5 py-3">
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Called by</h3>
-            <ul className="space-y-1">
+            <SectionHeader>Called By</SectionHeader>
+            <ul className="space-y-0.5">
               {calledBy.map((callerId) => {
                 const caller = nodeMap.get(callerId)
                 return (
-                  <li key={callerId} className="text-sm text-gray-300 flex items-start gap-1.5">
-                    <span className="text-gray-500 mt-0.5 shrink-0">&bull;</span>
+                  <li key={callerId} className="text-[13px] text-[var(--text-secondary)] flex items-start gap-1.5">
+                    <span className="text-[var(--text-muted)] mt-0.5 shrink-0">&bull;</span>
                     {caller ? (
                       <button
                         onClick={() => selectNode(caller.id)}
-                        className="font-mono text-left hover:text-blue-400 transition-colors"
+                        className="text-left hover:text-[var(--accent-cyan)] transition-colors border-l-2 border-transparent hover:border-[var(--accent-cyan)] pl-1 -ml-1 py-0.5"
                       >
                         {shortName(callerId)}
                       </button>
                     ) : (
-                      <span className="font-mono text-gray-500">{shortName(callerId)}</span>
+                      <span className="text-[var(--text-muted)]">{shortName(callerId)}</span>
                     )}
                   </li>
                 )
@@ -343,11 +361,11 @@ function ExplainWithAI({ node }: { node: GraphNode }) {
   return (
     <div className="px-5 py-4">
       {cached ? (
-        <div className="text-sm text-gray-300 leading-relaxed bg-gray-800/50 border border-gray-700/60 rounded-lg p-3">
+        <div className="text-[13px] text-[var(--text-secondary)] leading-relaxed glass-panel p-3">
           {cached}
         </div>
       ) : !hasKey ? (
-        <div className="w-full py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-center text-sm text-gray-500 select-none">
+        <div className="w-full py-2.5 glass-panel text-center text-[12px] text-[var(--text-muted)] select-none uppercase tracking-[0.1em]">
           Configure API key in settings
         </div>
       ) : (
@@ -355,19 +373,19 @@ function ExplainWithAI({ node }: { node: GraphNode }) {
           <button
             onClick={handleExplain}
             disabled={loading}
-            className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            className="w-full py-2.5 border border-[var(--accent-cyan)] text-[var(--accent-cyan)] hover:bg-[rgba(0,229,255,0.08)] disabled:border-[var(--panel-border)] disabled:text-[var(--text-muted)] text-[12px] font-medium uppercase tracking-[0.15em] transition-colors flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
-                <span className="inline-block w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                Explaining...
+                <span className="inline-block w-4 h-4 border border-[var(--text-muted)] border-t-transparent rounded-full animate-spin" />
+                ANALYZING...
               </>
             ) : (
-              'Explain with AI'
+              'EXPLAIN WITH AI'
             )}
           </button>
           {error && (
-            <p className="mt-2 text-xs text-red-400">{error}</p>
+            <p className="mt-2 text-[11px] text-[var(--error-red)]">{error}</p>
           )}
         </>
       )}
@@ -380,12 +398,12 @@ function ExplainWithAI({ node }: { node: GraphNode }) {
 function RepoPanel({ node }: { node: GraphNode }) {
   return (
     <div className="px-5 pt-5 pb-3 pr-12">
-      <h2 className="text-lg font-semibold text-white leading-tight">
+      <h2 className="text-sm font-medium uppercase tracking-[0.15em] text-[var(--text-primary)] leading-tight">
         {node.label}
       </h2>
-      <p className="text-sm text-gray-400 mt-1">Repository</p>
+      <p className="text-[11px] text-[var(--text-muted)] mt-1 uppercase tracking-[0.1em]">Repository</p>
       {node.summary_l1 && (
-        <p className="text-sm text-gray-300 mt-3 leading-relaxed">{node.summary_l1}</p>
+        <p className="text-[13px] text-[var(--text-secondary)] mt-3 leading-relaxed">{node.summary_l1}</p>
       )}
     </div>
   )
@@ -424,7 +442,7 @@ export function SidePanel() {
   return (
     <div
       className={[
-        'h-full bg-gray-900 border-l border-gray-800 overflow-y-auto overflow-x-hidden',
+        'h-full glass-panel corner-accents border-t-0 border-b-0 border-r-0 overflow-y-auto overflow-x-hidden',
         'transition-all duration-300 ease-in-out',
         'flex flex-col relative shrink-0',
         isOpen && selectedNode ? 'w-[380px] opacity-100' : 'w-0 opacity-0',

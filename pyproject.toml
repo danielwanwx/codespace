@@ -1,0 +1,12 @@
+[project]
+name = "codespace"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+llm = ["anthropic", "openai"]
+dev = ["pytest", "pytest-cov"]
+
+[project.scripts]
+codespace = "codespace.cli:main"

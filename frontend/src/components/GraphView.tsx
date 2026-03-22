@@ -32,7 +32,7 @@ function getModuleColor(index: number): string {
 export function GraphView() {
   const containerRef = useRef<HTMLDivElement>(null)
   const graphRef = useRef<Graph | null>(null)
-  const { graph: data, zoomLevel, expandedClusters, selectNode, toggleCluster, selectedNodeId } = useStore()
+  const { graph: data, zoomLevel, expandedClusters, selectNode, toggleCluster, selectedNodeId, focusNodeId, setFocusNodeId } = useStore()
 
   const handleComboExpand = useCallback(
     (id: string) => {
@@ -203,6 +203,18 @@ export function GraphView() {
       graphRef.current = null
     }
   }, [data, zoomLevel, expandedClusters, selectNode, selectedNodeId, handleComboExpand])
+
+  // Focus/zoom to a node when focusNodeId is set
+  useEffect(() => {
+    const g = graphRef.current
+    if (!g || !focusNodeId) return
+    try {
+      g.focusElement(focusNodeId, { duration: 300 })
+    } catch {
+      // Node may not be visible at current zoom level — silently ignore
+    }
+    setFocusNodeId(null)
+  }, [focusNodeId, setFocusNodeId])
 
   return <div ref={containerRef} className="w-full h-full" />
 }

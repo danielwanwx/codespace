@@ -29,10 +29,12 @@ interface GraphEdge {
 interface AppState {
   graph: CodespaceGraph | null
   selectedNodeId: string | null
+  focusNodeId: string | null
   zoomLevel: 'repo' | 'module' | 'function'
   expandedClusters: Set<string>
   setGraph: (g: CodespaceGraph) => void
   selectNode: (id: string | null) => void
+  setFocusNodeId: (id: string | null) => void
   setZoomLevel: (level: 'repo' | 'module' | 'function') => void
   toggleCluster: (id: string) => void
 }
@@ -40,10 +42,12 @@ interface AppState {
 export const useStore = create<AppState>((set) => ({
   graph: null,
   selectedNodeId: null,
+  focusNodeId: null,
   zoomLevel: 'module',
   expandedClusters: new Set(),
   setGraph: (graph) => set({ graph }),
   selectNode: (id) => set({ selectedNodeId: id }),
+  setFocusNodeId: (id) => set({ focusNodeId: id }),
   setZoomLevel: (level) => set({ zoomLevel: level }),
   toggleCluster: (id) => set((state) => {
     const next = new Set(state.expandedClusters)

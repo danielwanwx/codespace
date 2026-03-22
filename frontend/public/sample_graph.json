@@ -1,0 +1,1602 @@
+{
+  "metadata": {
+    "generated_at": "2026-03-22T19:46:15.247796+00:00",
+    "repos": [
+      "codespace"
+    ],
+    "stats": {
+      "repos": 1,
+      "modules": 2,
+      "functions": 49,
+      "classes": 6,
+      "edges": 40
+    }
+  },
+  "global_context": "",
+  "nodes": [
+    {
+      "id": "codespace",
+      "type": "repo",
+      "label": "codespace",
+      "semantic_label": "codespace",
+      "parent": null,
+      "repo": "codespace",
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace",
+      "type": "module",
+      "label": "codespace",
+      "semantic_label": "codespace",
+      "parent": "codespace",
+      "repo": "codespace",
+      "path": "src/codespace",
+      "file_count": 10,
+      "symbol_count": 25,
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests",
+      "type": "module",
+      "label": "tests",
+      "semantic_label": "tests",
+      "parent": "codespace",
+      "repo": "codespace",
+      "path": "tests",
+      "file_count": 8,
+      "symbol_count": 30,
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::main",
+      "type": "function",
+      "label": "main()",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/cli.py",
+      "line": 15,
+      "signature": "main()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "ArgumentParser",
+        "LLMClient",
+        "abspath",
+        "add_argument",
+        "aggregate_edges",
+        "append",
+        "basename",
+        "build_codespace_graph",
+        "build_reverse_index",
+        "dump",
+        "extend",
+        "extract_symbols",
+        "form_clusters",
+        "len",
+        "name_clusters",
+        "open",
+        "parse_args",
+        "print",
+        "scan_repo",
+        "setdefault",
+        "split"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::_build_naming_prompt",
+      "type": "function",
+      "label": "_build_naming_prompt(cluster: Cluster, symbols_summary: str) -> str",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/cluster_namer.py",
+      "line": 7,
+      "signature": "_build_naming_prompt(cluster: Cluster, symbols_summary: str) -> str",
+      "docstring": "",
+      "class_name": "",
+      "calls": [],
+      "called_by": [
+        "codespace::src.codespace::name_clusters",
+        "codespace::tests::test_build_naming_prompt"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::_get_symbols_for_cluster",
+      "type": "function",
+      "label": "_get_symbols_for_cluster(cluster: Cluster, symbols: list[SymbolEntry]) -> str",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/cluster_namer.py",
+      "line": 17,
+      "signature": "_get_symbols_for_cluster(cluster: Cluster, symbols: list[SymbolEntry]) -> str",
+      "docstring": "Get a summary of symbols belonging to this cluster.",
+      "class_name": "",
+      "calls": [
+        "join",
+        "replace",
+        "split"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::name_clusters",
+      "type": "function",
+      "label": "name_clusters(clusters: list[Cluster], symbols_by_module: dict[str, list[SymbolEntry]], llm_client: LLMClient | None = None) -> None",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/cluster_namer.py",
+      "line": 25,
+      "signature": "name_clusters(clusters: list[Cluster], symbols_by_module: dict[str, list[SymbolEntry]], llm_client: LLMClient | None = None) -> None",
+      "docstring": "Populate semantic_label for each cluster (mutates in place).",
+      "class_name": "",
+      "calls": [
+        "_build_naming_prompt",
+        "complete",
+        "get",
+        "join",
+        "split",
+        "strip"
+      ],
+      "called_by": [
+        "codespace::src.codespace::main",
+        "codespace::tests::test_name_clusters_without_llm"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::Cluster",
+      "type": "class",
+      "label": "Cluster()",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/clusters.py",
+      "line": 7,
+      "signature": "Cluster()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [],
+      "called_by": [
+        "codespace::src.codespace::form_clusters",
+        "codespace::tests::test_build_naming_prompt",
+        "codespace::tests::test_name_clusters_without_llm",
+        "codespace::tests::test_export_structure",
+        "codespace::tests::test_export_has_all_node_types",
+        "codespace::tests::test_export_valid_json"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::form_clusters",
+      "type": "function",
+      "label": "form_clusters(modules: list[Module], symbols: list[SymbolEntry], repo_name: str) -> list[Cluster]",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/clusters.py",
+      "line": 16,
+      "signature": "form_clusters(modules: list[Module], symbols: list[SymbolEntry], repo_name: str) -> list[Cluster]",
+      "docstring": "Convert modules to clusters. Modules already handle merge-small via indexer.",
+      "class_name": "",
+      "calls": [
+        "Cluster",
+        "append",
+        "get",
+        "len",
+        "split"
+      ],
+      "called_by": [
+        "codespace::src.codespace::main",
+        "codespace::tests::test_basic_cluster_formation",
+        "codespace::tests::test_cluster_has_parent_repo",
+        "codespace::tests::test_cluster_id_format"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::build_codespace_graph",
+      "type": "function",
+      "label": "build_codespace_graph(repo_name: str, clusters: list[Cluster], symbols: list[SymbolEntry], func_edges: list[ResolvedEdge], mod_edges: dict[tuple[str, str], dict], global_context: str = '') -> dict",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/export.py",
+      "line": 8,
+      "signature": "build_codespace_graph(repo_name: str, clusters: list[Cluster], symbols: list[SymbolEntry], func_edges: list[ResolvedEdge], mod_edges: dict[tuple[str, str], dict], global_context: str = '') -> dict",
+      "docstring": "Assemble the full codespace_graph.json structure.",
+      "class_name": "",
+      "calls": [
+        "append",
+        "isoformat",
+        "items",
+        "len",
+        "now",
+        "split",
+        "sum"
+      ],
+      "called_by": [
+        "codespace::src.codespace::main",
+        "codespace::tests::test_export_structure",
+        "codespace::tests::test_export_has_all_node_types",
+        "codespace::tests::test_export_valid_json"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::ResolvedEdge",
+      "type": "class",
+      "label": "ResolvedEdge()",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/graph_aggregator.py",
+      "line": 18,
+      "signature": "ResolvedEdge()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [],
+      "called_by": [
+        "codespace::src.codespace::aggregate_edges",
+        "codespace::tests::test_export_structure"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::_extract_module",
+      "type": "function",
+      "label": "_extract_module(qname: str) -> str",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/graph_aggregator.py",
+      "line": 25,
+      "signature": "_extract_module(qname: str) -> str",
+      "docstring": "'repo::auth.service::login' -> 'repo::auth.service'",
+      "class_name": "",
+      "calls": [
+        "join",
+        "len",
+        "split"
+      ],
+      "called_by": [
+        "codespace::src.codespace::_resolve",
+        "codespace::src.codespace::aggregate_edges"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::_bare_name",
+      "type": "function",
+      "label": "_bare_name(qname: str) -> str",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/graph_aggregator.py",
+      "line": 31,
+      "signature": "_bare_name(qname: str) -> str",
+      "docstring": "'repo::auth.service::AuthService.login' -> 'login'",
+      "class_name": "",
+      "calls": [
+        "split"
+      ],
+      "called_by": [
+        "codespace::src.codespace::_resolve",
+        "codespace::src.codespace::aggregate_edges"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::_module_overlap",
+      "type": "function",
+      "label": "_module_overlap(qname: str, import_path: str) -> int",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/graph_aggregator.py",
+      "line": 36,
+      "signature": "_module_overlap(qname: str, import_path: str) -> int",
+      "docstring": "Score how well a qualified name matches an import path.",
+      "class_name": "",
+      "calls": [
+        "lstrip",
+        "split",
+        "zip"
+      ],
+      "called_by": [
+        "codespace::src.codespace::_resolve"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::_resolve",
+      "type": "function",
+      "label": "_resolve(candidates: list[str], caller_module: str, caller_imports: dict[str, str]) -> list[tuple[str, str]]",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/graph_aggregator.py",
+      "line": 51,
+      "signature": "_resolve(candidates: list[str], caller_module: str, caller_imports: dict[str, str]) -> list[tuple[str, str]]",
+      "docstring": "Resolve candidates with priority: import > same-module > unique > ambiguous.",
+      "class_name": "",
+      "calls": [
+        "_bare_name",
+        "_extract_module",
+        "_module_overlap",
+        "len",
+        "max",
+        "replace",
+        "split"
+      ],
+      "called_by": [
+        "codespace::src.codespace::aggregate_edges"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::aggregate_edges",
+      "type": "function",
+      "label": "aggregate_edges(symbols: list[SymbolEntry], file_contents: dict[str, str]) -> tuple[list[ResolvedEdge], dict[tuple[str, str], dict]]",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/graph_aggregator.py",
+      "line": 88,
+      "signature": "aggregate_edges(symbols: list[SymbolEntry], file_contents: dict[str, str]) -> tuple[list[ResolvedEdge], dict[tuple[str, str], dict]]",
+      "docstring": "Resolve calls to qualified edges, aggregate to module level.",
+      "class_name": "",
+      "calls": [
+        "ResolvedEdge",
+        "_bare_name",
+        "_extract_module",
+        "_resolve",
+        "append",
+        "defaultdict",
+        "dict",
+        "get",
+        "get_imports",
+        "parse_imports"
+      ],
+      "called_by": [
+        "codespace::src.codespace::main",
+        "codespace::tests::test_resolves_cross_module_calls",
+        "codespace::tests::test_import_aware_high_confidence",
+        "codespace::tests::test_module_edge_aggregation",
+        "codespace::tests::test_skips_same_module_calls",
+        "codespace::tests::test_skips_common_names_without_import"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::get_imports",
+      "type": "function",
+      "label": "get_imports(file_path: str) -> dict[str, str]",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/graph_aggregator.py",
+      "line": 105,
+      "signature": "get_imports(file_path: str) -> dict[str, str]",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "get",
+        "parse_imports"
+      ],
+      "called_by": [
+        "codespace::src.codespace::aggregate_edges"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::parse_imports",
+      "type": "function",
+      "label": "parse_imports(source: str) -> dict[str, str]",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/imports.py",
+      "line": 8,
+      "signature": "parse_imports(source: str) -> dict[str, str]",
+      "docstring": "Parse source code, return {imported_name: module_path}.",
+      "class_name": "",
+      "calls": [
+        "isinstance",
+        "lstrip",
+        "parse",
+        "split",
+        "walk"
+      ],
+      "called_by": [
+        "codespace::src.codespace::aggregate_edges",
+        "codespace::src.codespace::get_imports",
+        "codespace::tests::test_parse_from_imports",
+        "codespace::tests::test_parse_multiple_names",
+        "codespace::tests::test_parse_single_name",
+        "codespace::tests::test_skips_stdlib",
+        "codespace::tests::test_relative_import"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::IndexedFile",
+      "type": "class",
+      "label": "IndexedFile()",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/indexer.py",
+      "line": 12,
+      "signature": "IndexedFile()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [],
+      "called_by": [
+        "codespace::src.codespace::scan_repo",
+        "codespace::tests::_make_module"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::Module",
+      "type": "class",
+      "label": "Module()",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/indexer.py",
+      "line": 21,
+      "signature": "Module()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [],
+      "called_by": [
+        "codespace::src.codespace::scan_repo",
+        "codespace::tests::_make_module"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::scan_repo",
+      "type": "function",
+      "label": "scan_repo(repo_path: str, min_files_per_module: int = 1) -> list[Module]",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/indexer.py",
+      "line": 32,
+      "signature": "scan_repo(repo_path: str, min_files_per_module: int = 1) -> list[Module]",
+      "docstring": "Walk repo, group .py files by directory into Modules.",
+      "class_name": "",
+      "calls": [
+        "IndexedFile",
+        "Module",
+        "abspath",
+        "add",
+        "any",
+        "append",
+        "basename",
+        "count",
+        "dirname",
+        "endswith",
+        "extend",
+        "getsize",
+        "items",
+        "join",
+        "len",
+        "open",
+        "read",
+        "relpath",
+        "set",
+        "sorted",
+        "walk"
+      ],
+      "called_by": [
+        "codespace::src.codespace::main",
+        "codespace::tests::test_scan_finds_modules",
+        "codespace::tests::test_scan_collects_files",
+        "codespace::tests::test_scan_skips_excluded_dirs",
+        "codespace::tests::test_merge_small_modules"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::LLMClient",
+      "type": "class",
+      "label": "LLMClient()",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/llm.py",
+      "line": 6,
+      "signature": "LLMClient()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [],
+      "called_by": [
+        "codespace::src.codespace::main"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::LLMClient.complete",
+      "type": "function",
+      "label": "complete(prompt: str, max_tokens: int) -> str",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/llm.py",
+      "line": 11,
+      "signature": "complete(prompt: str, max_tokens: int) -> str",
+      "docstring": "",
+      "class_name": "LLMClient",
+      "calls": [
+        "Anthropic",
+        "OpenAI",
+        "create"
+      ],
+      "called_by": [
+        "codespace::src.codespace::name_clusters"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::SymbolEntry",
+      "type": "class",
+      "label": "SymbolEntry()",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/symbols.py",
+      "line": 7,
+      "signature": "SymbolEntry()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [],
+      "called_by": [
+        "codespace::src.codespace::extract_symbols",
+        "codespace::tests::test_export_structure",
+        "codespace::tests::test_export_has_all_node_types",
+        "codespace::tests::_make_symbols",
+        "codespace::tests::test_skips_common_names_without_import"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::extract_symbols",
+      "type": "function",
+      "label": "extract_symbols(source: str, repo: str, module_path: str, file_path: str) -> list[SymbolEntry]",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/symbols.py",
+      "line": 19,
+      "signature": "extract_symbols(source: str, repo: str, module_path: str, file_path: str) -> list[SymbolEntry]",
+      "docstring": "Extract all functions, classes, methods from Python source.",
+      "class_name": "",
+      "calls": [
+        "SymbolEntry",
+        "_extract_calls",
+        "_format_signature",
+        "append",
+        "get_docstring",
+        "getattr",
+        "isinstance",
+        "iter_child_nodes",
+        "next",
+        "parse",
+        "split",
+        "startswith",
+        "walk"
+      ],
+      "called_by": [
+        "codespace::src.codespace::main",
+        "codespace::tests::test_extract_functions",
+        "codespace::tests::test_extract_class",
+        "codespace::tests::test_extract_methods",
+        "codespace::tests::test_calls_extracted",
+        "codespace::tests::test_signature_format"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::_format_signature",
+      "type": "function",
+      "label": "_format_signature(node: ast.FunctionDef | ast.AsyncFunctionDef | None, class_name: str = '', as_class: bool = False) -> str",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/symbols.py",
+      "line": 108,
+      "signature": "_format_signature(node: ast.FunctionDef | ast.AsyncFunctionDef | None, class_name: str = '', as_class: bool = False) -> str",
+      "docstring": "Build signature string from AST node.",
+      "class_name": "",
+      "calls": [
+        "append",
+        "enumerate",
+        "join",
+        "len",
+        "unparse"
+      ],
+      "called_by": [
+        "codespace::src.codespace::extract_symbols"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::_extract_calls",
+      "type": "function",
+      "label": "_extract_calls(node: ast.AST) -> list[str]",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/symbols.py",
+      "line": 134,
+      "signature": "_extract_calls(node: ast.AST) -> list[str]",
+      "docstring": "Extract function/method names called within this node.",
+      "class_name": "",
+      "calls": [
+        "add",
+        "isinstance",
+        "set",
+        "sorted",
+        "walk"
+      ],
+      "called_by": [
+        "codespace::src.codespace::extract_symbols"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::src.codespace::build_reverse_index",
+      "type": "function",
+      "label": "build_reverse_index(all_symbols: list[SymbolEntry]) -> None",
+      "semantic_label": null,
+      "parent": "codespace::src.codespace",
+      "repo": "codespace",
+      "file": "src/codespace/symbols.py",
+      "line": 146,
+      "signature": "build_reverse_index(all_symbols: list[SymbolEntry]) -> None",
+      "docstring": "Populate called_by for all symbols (mutates in place).",
+      "class_name": "",
+      "calls": [
+        "append",
+        "get",
+        "setdefault",
+        "split"
+      ],
+      "called_by": [
+        "codespace::src.codespace::main"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_build_naming_prompt",
+      "type": "function",
+      "label": "test_build_naming_prompt()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_cluster_namer.py",
+      "line": 5,
+      "signature": "test_build_naming_prompt()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "Cluster",
+        "_build_naming_prompt"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_name_clusters_without_llm",
+      "type": "function",
+      "label": "test_name_clusters_without_llm()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_cluster_namer.py",
+      "line": 13,
+      "signature": "test_name_clusters_without_llm()",
+      "docstring": "Without LLM, falls back to directory name.",
+      "class_name": "",
+      "calls": [
+        "Cluster",
+        "name_clusters"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::_make_module",
+      "type": "function",
+      "label": "_make_module(name, path, n_files = 3)",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_clusters.py",
+      "line": 6,
+      "signature": "_make_module(name, path, n_files = 3)",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "IndexedFile",
+        "Module",
+        "range"
+      ],
+      "called_by": [
+        "codespace::tests::test_basic_cluster_formation",
+        "codespace::tests::test_cluster_has_parent_repo",
+        "codespace::tests::test_cluster_id_format"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_basic_cluster_formation",
+      "type": "function",
+      "label": "test_basic_cluster_formation()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_clusters.py",
+      "line": 11,
+      "signature": "test_basic_cluster_formation()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "_make_module",
+        "form_clusters",
+        "len"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_cluster_has_parent_repo",
+      "type": "function",
+      "label": "test_cluster_has_parent_repo()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_clusters.py",
+      "line": 18,
+      "signature": "test_cluster_has_parent_repo()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "_make_module",
+        "form_clusters"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_cluster_id_format",
+      "type": "function",
+      "label": "test_cluster_id_format()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_clusters.py",
+      "line": 23,
+      "signature": "test_cluster_id_format()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "_make_module",
+        "form_clusters"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_export_structure",
+      "type": "function",
+      "label": "test_export_structure()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_export.py",
+      "line": 7,
+      "signature": "test_export_structure()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "Cluster",
+        "ResolvedEdge",
+        "SymbolEntry",
+        "build_codespace_graph"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_export_has_all_node_types",
+      "type": "function",
+      "label": "test_export_has_all_node_types()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_export.py",
+      "line": 26,
+      "signature": "test_export_has_all_node_types()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "Cluster",
+        "SymbolEntry",
+        "build_codespace_graph"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_export_valid_json",
+      "type": "function",
+      "label": "test_export_valid_json()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_export.py",
+      "line": 39,
+      "signature": "test_export_valid_json()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "Cluster",
+        "build_codespace_graph",
+        "dumps"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::_make_symbols",
+      "type": "function",
+      "label": "_make_symbols()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_graph_aggregator.py",
+      "line": 5,
+      "signature": "_make_symbols()",
+      "docstring": "Two modules: auth and database, with cross-module calls.",
+      "class_name": "",
+      "calls": [
+        "SymbolEntry"
+      ],
+      "called_by": [
+        "codespace::tests::test_resolves_cross_module_calls",
+        "codespace::tests::test_import_aware_high_confidence",
+        "codespace::tests::test_module_edge_aggregation",
+        "codespace::tests::test_skips_same_module_calls"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_resolves_cross_module_calls",
+      "type": "function",
+      "label": "test_resolves_cross_module_calls()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_graph_aggregator.py",
+      "line": 40,
+      "signature": "test_resolves_cross_module_calls()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "_make_symbols",
+        "aggregate_edges"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_import_aware_high_confidence",
+      "type": "function",
+      "label": "test_import_aware_high_confidence()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_graph_aggregator.py",
+      "line": 46,
+      "signature": "test_import_aware_high_confidence()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "_make_symbols",
+        "aggregate_edges",
+        "endswith",
+        "next"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_module_edge_aggregation",
+      "type": "function",
+      "label": "test_module_edge_aggregation()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_graph_aggregator.py",
+      "line": 53,
+      "signature": "test_module_edge_aggregation()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "_make_symbols",
+        "aggregate_edges"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_skips_same_module_calls",
+      "type": "function",
+      "label": "test_skips_same_module_calls()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_graph_aggregator.py",
+      "line": 60,
+      "signature": "test_skips_same_module_calls()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "_make_symbols",
+        "aggregate_edges",
+        "startswith"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_skips_common_names_without_import",
+      "type": "function",
+      "label": "test_skips_common_names_without_import()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_graph_aggregator.py",
+      "line": 68,
+      "signature": "test_skips_common_names_without_import()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "SymbolEntry",
+        "aggregate_edges",
+        "any"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_parse_from_imports",
+      "type": "function",
+      "label": "test_parse_from_imports()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_imports.py",
+      "line": 12,
+      "signature": "test_parse_from_imports()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "parse_imports"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_parse_multiple_names",
+      "type": "function",
+      "label": "test_parse_multiple_names()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_imports.py",
+      "line": 17,
+      "signature": "test_parse_multiple_names()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "parse_imports"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_parse_single_name",
+      "type": "function",
+      "label": "test_parse_single_name()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_imports.py",
+      "line": 21,
+      "signature": "test_parse_single_name()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "parse_imports"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_skips_stdlib",
+      "type": "function",
+      "label": "test_skips_stdlib()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_imports.py",
+      "line": 25,
+      "signature": "test_skips_stdlib()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "parse_imports"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_relative_import",
+      "type": "function",
+      "label": "test_relative_import()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_imports.py",
+      "line": 30,
+      "signature": "test_relative_import()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "parse_imports"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::_make_repo",
+      "type": "function",
+      "label": "_make_repo(tmp_path)",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_indexer.py",
+      "line": 4,
+      "signature": "_make_repo(tmp_path)",
+      "docstring": "Create a minimal fake repo.",
+      "class_name": "",
+      "calls": [
+        "join",
+        "makedirs",
+        "open",
+        "write"
+      ],
+      "called_by": [
+        "codespace::tests::test_scan_finds_modules",
+        "codespace::tests::test_scan_collects_files",
+        "codespace::tests::test_scan_skips_excluded_dirs",
+        "codespace::tests::test_merge_small_modules"
+      ],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_scan_finds_modules",
+      "type": "function",
+      "label": "test_scan_finds_modules()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_indexer.py",
+      "line": 18,
+      "signature": "test_scan_finds_modules()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "TemporaryDirectory",
+        "_make_repo",
+        "scan_repo"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_scan_collects_files",
+      "type": "function",
+      "label": "test_scan_collects_files()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_indexer.py",
+      "line": 26,
+      "signature": "test_scan_collects_files()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "TemporaryDirectory",
+        "_make_repo",
+        "len",
+        "next",
+        "scan_repo"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_scan_skips_excluded_dirs",
+      "type": "function",
+      "label": "test_scan_skips_excluded_dirs()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_indexer.py",
+      "line": 33,
+      "signature": "test_scan_skips_excluded_dirs()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "TemporaryDirectory",
+        "_make_repo",
+        "join",
+        "makedirs",
+        "open",
+        "scan_repo",
+        "write"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_merge_small_modules",
+      "type": "function",
+      "label": "test_merge_small_modules()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_indexer.py",
+      "line": 44,
+      "signature": "test_merge_small_modules()",
+      "docstring": "Directories with <= 2 files merge into parent.",
+      "class_name": "",
+      "calls": [
+        "TemporaryDirectory",
+        "_make_repo",
+        "scan_repo"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_extract_functions",
+      "type": "function",
+      "label": "test_extract_functions()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_symbols.py",
+      "line": 21,
+      "signature": "test_extract_functions()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "extract_symbols"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_extract_class",
+      "type": "function",
+      "label": "test_extract_class()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_symbols.py",
+      "line": 26,
+      "signature": "test_extract_class()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "extract_symbols",
+        "len"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_extract_methods",
+      "type": "function",
+      "label": "test_extract_methods()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_symbols.py",
+      "line": 32,
+      "signature": "test_extract_methods()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "extract_symbols",
+        "next"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_calls_extracted",
+      "type": "function",
+      "label": "test_calls_extracted()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_symbols.py",
+      "line": 39,
+      "signature": "test_calls_extracted()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "extract_symbols",
+        "next"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    },
+    {
+      "id": "codespace::tests::test_signature_format",
+      "type": "function",
+      "label": "test_signature_format()",
+      "semantic_label": null,
+      "parent": "codespace::tests",
+      "repo": "codespace",
+      "file": "tests/test_symbols.py",
+      "line": 46,
+      "signature": "test_signature_format()",
+      "docstring": "",
+      "class_name": "",
+      "calls": [
+        "extract_symbols",
+        "next"
+      ],
+      "called_by": [],
+      "summary_l1": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "codespace::tests",
+      "target": "codespace::src.codespace",
+      "type": "call",
+      "weight": 39,
+      "children_edges": [
+        "test_build_naming_prompt->Cluster",
+        "test_build_naming_prompt->_build_naming_prompt",
+        "test_name_clusters_without_llm->Cluster",
+        "test_name_clusters_without_llm->name_clusters",
+        "_make_module->IndexedFile",
+        "_make_module->Module",
+        "test_basic_cluster_formation->form_clusters",
+        "test_cluster_has_parent_repo->form_clusters",
+        "test_cluster_id_format->form_clusters",
+        "test_export_structure->Cluster",
+        "test_export_structure->ResolvedEdge",
+        "test_export_structure->SymbolEntry",
+        "test_export_structure->build_codespace_graph",
+        "test_export_has_all_node_types->Cluster",
+        "test_export_has_all_node_types->SymbolEntry",
+        "test_export_has_all_node_types->build_codespace_graph",
+        "test_export_valid_json->Cluster",
+        "test_export_valid_json->build_codespace_graph",
+        "_make_symbols->SymbolEntry",
+        "test_resolves_cross_module_calls->aggregate_edges",
+        "test_import_aware_high_confidence->aggregate_edges",
+        "test_module_edge_aggregation->aggregate_edges",
+        "test_skips_same_module_calls->aggregate_edges",
+        "test_skips_common_names_without_import->SymbolEntry",
+        "test_skips_common_names_without_import->aggregate_edges",
+        "test_parse_from_imports->parse_imports",
+        "test_parse_multiple_names->parse_imports",
+        "test_parse_single_name->parse_imports",
+        "test_skips_stdlib->parse_imports",
+        "test_relative_import->parse_imports",
+        "test_scan_finds_modules->scan_repo",
+        "test_scan_collects_files->scan_repo",
+        "test_scan_skips_excluded_dirs->scan_repo",
+        "test_merge_small_modules->scan_repo",
+        "test_extract_functions->extract_symbols",
+        "test_extract_class->extract_symbols",
+        "test_extract_methods->extract_symbols",
+        "test_calls_extracted->extract_symbols",
+        "test_signature_format->extract_symbols"
+      ]
+    },
+    {
+      "source": "codespace::tests::test_build_naming_prompt",
+      "target": "codespace::src.codespace::Cluster",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_build_naming_prompt",
+      "target": "codespace::src.codespace::_build_naming_prompt",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_name_clusters_without_llm",
+      "target": "codespace::src.codespace::Cluster",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_name_clusters_without_llm",
+      "target": "codespace::src.codespace::name_clusters",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::_make_module",
+      "target": "codespace::src.codespace::IndexedFile",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::_make_module",
+      "target": "codespace::src.codespace::Module",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_basic_cluster_formation",
+      "target": "codespace::src.codespace::form_clusters",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_cluster_has_parent_repo",
+      "target": "codespace::src.codespace::form_clusters",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_cluster_id_format",
+      "target": "codespace::src.codespace::form_clusters",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_export_structure",
+      "target": "codespace::src.codespace::Cluster",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_export_structure",
+      "target": "codespace::src.codespace::ResolvedEdge",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_export_structure",
+      "target": "codespace::src.codespace::SymbolEntry",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_export_structure",
+      "target": "codespace::src.codespace::build_codespace_graph",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_export_has_all_node_types",
+      "target": "codespace::src.codespace::Cluster",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_export_has_all_node_types",
+      "target": "codespace::src.codespace::SymbolEntry",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_export_has_all_node_types",
+      "target": "codespace::src.codespace::build_codespace_graph",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_export_valid_json",
+      "target": "codespace::src.codespace::Cluster",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_export_valid_json",
+      "target": "codespace::src.codespace::build_codespace_graph",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::_make_symbols",
+      "target": "codespace::src.codespace::SymbolEntry",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_resolves_cross_module_calls",
+      "target": "codespace::src.codespace::aggregate_edges",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_import_aware_high_confidence",
+      "target": "codespace::src.codespace::aggregate_edges",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_module_edge_aggregation",
+      "target": "codespace::src.codespace::aggregate_edges",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_skips_same_module_calls",
+      "target": "codespace::src.codespace::aggregate_edges",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_skips_common_names_without_import",
+      "target": "codespace::src.codespace::SymbolEntry",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_skips_common_names_without_import",
+      "target": "codespace::src.codespace::aggregate_edges",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_parse_from_imports",
+      "target": "codespace::src.codespace::parse_imports",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_parse_multiple_names",
+      "target": "codespace::src.codespace::parse_imports",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_parse_single_name",
+      "target": "codespace::src.codespace::parse_imports",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_skips_stdlib",
+      "target": "codespace::src.codespace::parse_imports",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_relative_import",
+      "target": "codespace::src.codespace::parse_imports",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_scan_finds_modules",
+      "target": "codespace::src.codespace::scan_repo",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_scan_collects_files",
+      "target": "codespace::src.codespace::scan_repo",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_scan_skips_excluded_dirs",
+      "target": "codespace::src.codespace::scan_repo",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_merge_small_modules",
+      "target": "codespace::src.codespace::scan_repo",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_extract_functions",
+      "target": "codespace::src.codespace::extract_symbols",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_extract_class",
+      "target": "codespace::src.codespace::extract_symbols",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_extract_methods",
+      "target": "codespace::src.codespace::extract_symbols",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_calls_extracted",
+      "target": "codespace::src.codespace::extract_symbols",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    },
+    {
+      "source": "codespace::tests::test_signature_format",
+      "target": "codespace::src.codespace::extract_symbols",
+      "type": "call",
+      "weight": 1,
+      "confidence": "high"
+    }
+  ]
+}

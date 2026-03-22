@@ -11,6 +11,8 @@ from codespace.cluster_namer import name_clusters
 from codespace.export import build_codespace_graph
 from codespace.llm import LLMClient
 
+FRONTEND_DIST_DIR = "frontend/dist"
+
 
 def main():
     parser = argparse.ArgumentParser(description="Codespace — code graph generator")
@@ -19,6 +21,11 @@ def main():
     parser.add_argument("--llm-provider", choices=["anthropic", "openai", "none"], default="none")
     parser.add_argument("--llm-api-key", default=None)
     parser.add_argument("--llm-model", default=None, help="Override default LLM model")
+    parser.add_argument(
+        "--serve", action="store_true",
+        help="After generating the graph, copy it into the frontend dist/ and start a local HTTP server on port 3000",
+    )
+    parser.add_argument("--port", type=int, default=3000, help="Port for --serve (default: 3000)")
     args = parser.parse_args()
 
     import os
@@ -80,7 +87,44 @@ def main():
         json.dump(graph, f, indent=2)
     print(f"  Done! Wrote {args.output}")
     print(f"  Stats: {graph['metadata']['stats']}")
+
+    if args.serve:
+        _serve(args.output, args.port)
+
     return 0
+
+
+def _serve(graph_output: str, port: int) -> None:
+    """Copy graph JSON into frontend/dist and start a local HTTP server."""
+    import http.server
+    import functools
+    import os
+    import shutil
+    from pathlib import Path
+
+    # Resolve dist dir relative to the project root (where pyproject.toml lives)
+    project_root = Path(__file__).resolve().parents[2]
+    dist_dir = project_root / FRONTEND_DIST_DIR
+
+    if not dist_dir.exists():
+        print(f"\n  Error: {dist_dir} does not exist. Run 'npm run build' in frontend/ first.")
+        sys.exit(1)
+
+    # Copy graph JSON into dist/
+    dest = dist_dir / "codespace_graph.json"
+    shutil.copy2(graph_output, dest)
+    print(f"\n  Copied {graph_output} -> {dest}")
+
+    # Start HTTP server
+    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(dist_dir))
+    server = http.server.HTTPServer(("", port), handler)
+    print(f"  Serving {dist_dir} at http://localhost:{port}")
+    print("  Press Ctrl+C to stop.\n")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\n  Server stopped.")
+        server.server_close()
 
 
 if __name__ == "__main__":

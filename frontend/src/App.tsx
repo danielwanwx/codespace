@@ -12,7 +12,9 @@ function App() {
   const graph = useStore((s) => s.graph)
 
   useEffect(() => {
-    fetch('/sample_graph.json')
+    const params = new URLSearchParams(window.location.search)
+    const graphUrl = params.get('graph') || './codespace_graph.json'
+    fetch(graphUrl)
       .then((r) => r.json())
       .then(setGraph)
   }, [setGraph])

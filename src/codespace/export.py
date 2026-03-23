@@ -12,8 +12,12 @@ def build_codespace_graph(
     func_edges: list[ResolvedEdge],
     mod_edges: dict[tuple[str, str], dict],
     global_context: str = "",
+    summaries: dict[str, str] | None = None,
+    wiki_paths: dict[str, str] | None = None,
 ) -> dict:
     """Assemble the full codespace_graph.json structure."""
+    summaries = summaries or {}
+    wiki_paths = wiki_paths or {}
     nodes = []
     edges = []
 
@@ -25,7 +29,8 @@ def build_codespace_graph(
         "semantic_label": repo_name,
         "parent": None,
         "repo": repo_name,
-        "summary_l1": None,
+        "summary_l1": summaries.get(repo_name),
+        "wiki_path": wiki_paths.get(repo_name),
     })
 
     # Cluster (module) nodes
@@ -40,7 +45,8 @@ def build_codespace_graph(
             "path": cluster.path,
             "file_count": cluster.file_count,
             "symbol_count": cluster.symbol_count,
-            "summary_l1": None,
+            "summary_l1": summaries.get(cluster.id),
+            "wiki_path": wiki_paths.get(cluster.id),
         })
 
     # Symbol (function/class) nodes
@@ -61,7 +67,8 @@ def build_codespace_graph(
             "class_name": sym.metadata_class_name,
             "calls": sym.calls,
             "called_by": sym.called_by,
-            "summary_l1": None,
+            "summary_l1": summaries.get(sym.qualified_name),
+            "wiki_path": wiki_paths.get(sym.qualified_name),
         })
 
     # Module-level edges

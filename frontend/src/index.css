@@ -1,66 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  --space-black: #010203;
-  --panel-bg: #181f22;
-  --panel-border: #333c41;
-  --text-muted: #56646a;
-  --text-secondary: #969c99;
-  --text-primary: #ededea;
-  --accent-cyan: #00E5FF;
-  --accent-blue: #4FC3F7;
-  --warn-amber: #FFB74D;
+  --bg: #ffffff;
+  --panel-bg: #ffffff;
+  --panel-border: rgba(0,0,0,0.06);
+  --text-muted: rgba(0,0,0,0.25);
+  --text-secondary: rgba(0,0,0,0.55);
+  --text-primary: #111111;
+  --text-label: rgba(0,0,0,0.4);
+  --accent-active: #111111;
   --error-red: #EF5350;
 }
 
 * {
-  font-family: "JetBrains Mono", "Space Mono", "Fira Code", monospace;
+  font-family: "Barlow", sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
-  background: var(--space-black);
+  background: var(--bg);
   color: var(--text-primary);
   margin: 0;
   overflow: hidden;
 }
 
+::selection { background: rgba(0,0,0,0.08); }
+
 /* Scrollbar styling */
 ::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--space-black); }
-::-webkit-scrollbar-thumb { background: var(--panel-border); }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); }
 
-/* Glass panel mixin class */
+/* Light panel */
 .glass-panel {
-  background: rgba(24, 31, 34, 0.85);
-  backdrop-filter: blur(12px);
+  background: var(--panel-bg);
   border: 1px solid var(--panel-border);
 }
 
-/* Corner accent decoration */
+/* Corner accent decoration — removed for light theme */
 .corner-accents {
   position: relative;
 }
 .corner-accents::before,
 .corner-accents::after {
-  content: '';
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  border-color: var(--accent-cyan);
-  border-style: solid;
-  opacity: 0.4;
-  pointer-events: none;
-}
-.corner-accents::before {
-  top: -1px; left: -1px;
-  border-width: 1px 0 0 1px;
-}
-.corner-accents::after {
-  bottom: -1px; right: -1px;
-  border-width: 0 1px 1px 0;
+  display: none;
 }
 
-/* Glow effect for active/selected elements */
-.glow-cyan {
-  box-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
+/* Mono font utility */
+.font-mono {
+  font-family: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
 }

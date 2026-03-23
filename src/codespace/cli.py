@@ -9,6 +9,7 @@ from codespace.graph_aggregator import aggregate_edges
 from codespace.clusters import form_clusters
 from codespace.cluster_namer import name_clusters
 from codespace.export import build_codespace_graph
+from codespace.wiki_generator import generate_wiki_pages
 from codespace.llm import LLMClient
 
 FRONTEND_DIST_DIR = "frontend/dist"
@@ -22,6 +23,10 @@ def main():
     parser.add_argument("--llm-api-key", default=None)
     parser.add_argument("--llm-model", default=None, help="Override default LLM model")
     parser.add_argument(
+        "--wiki-depth", choices=["none", "modules", "full"], default=None,
+        help="Wiki generation depth: none, modules (default when LLM configured), or full",
+    )
+    parser.add_argument(
         "--serve", action="store_true",
         help="After generating the graph, copy it into the frontend dist/ and start a local HTTP server on port 3000",
     )
@@ -33,13 +38,20 @@ def main():
     repo_name = os.path.basename(repo_path)
     print(f"Codespace: analyzing {repo_path}")
 
+    # Resolve wiki depth default
+    wiki_depth = args.wiki_depth
+    if wiki_depth is None:
+        wiki_depth = "modules" if (args.llm_provider and args.llm_provider != "none") else "none"
+
+    total_steps = 7 if wiki_depth != "none" else 6
+
     # Step 1: Index
-    print("  [1/6] Indexing repo...")
+    print(f"  [1/{total_steps}] Indexing repo...")
     modules = scan_repo(repo_path)
     print(f"         Found {len(modules)} modules")
 
     # Step 2: Extract symbols
-    print("  [2/6] Extracting symbols...")
+    print(f"  [2/{total_steps}] Extracting symbols...")
     all_symbols = []
     file_contents: dict[str, str] = {}
     for mod in modules:
@@ -51,12 +63,12 @@ def main():
     print(f"         Found {len(all_symbols)} symbols")
 
     # Step 3: Resolve edges
-    print("  [3/6] Resolving call graph...")
+    print(f"  [3/{total_steps}] Resolving call graph...")
     func_edges, mod_edges = aggregate_edges(all_symbols, file_contents)
     print(f"         Resolved {len(func_edges)} function edges, {len(mod_edges)} module edges")
 
     # Step 4: Form clusters
-    print("  [4/6] Forming clusters...")
+    print(f"  [4/{total_steps}] Forming clusters...")
     clusters = form_clusters(modules, all_symbols, repo_name)
 
     # Step 5: Name clusters (optional LLM)
@@ -67,9 +79,9 @@ def main():
             api_key=args.llm_api_key or "",
             model=args.llm_model or "",
         )
-        print("  [5/6] Naming clusters with LLM...")
+        print(f"  [5/{total_steps}] Naming clusters with LLM...")
     else:
-        print("  [5/6] Using directory names (no LLM)...")
+        print(f"  [5/{total_steps}] Using directory names (no LLM)...")
 
     symbols_by_module: dict[str, list] = {}
     for sym in all_symbols:
@@ -79,9 +91,28 @@ def main():
             symbols_by_module.setdefault(mod_key, []).append(sym)
     name_clusters(clusters, symbols_by_module, llm_client=llm_client)
 
-    # Step 6: Export
-    print("  [6/6] Exporting graph...")
-    graph = build_codespace_graph(repo_name, clusters, all_symbols, func_edges, mod_edges)
+    # Step 6: Generate wiki pages (optional LLM)
+    wiki_paths: dict[str, str] = {}
+    summaries: dict[str, str] = {}
+    if wiki_depth != "none" and llm_client:
+        print(f"  [6/{total_steps}] Generating wiki pages ({wiki_depth})...")
+        output_dir = os.path.join(os.path.dirname(os.path.abspath(args.output)), "wiki")
+        wiki_paths, summaries = generate_wiki_pages(
+            clusters, all_symbols, file_contents,
+            func_edges, mod_edges, llm_client, output_dir,
+            wiki_depth=wiki_depth,
+        )
+        print(f"         Generated {len(wiki_paths)} wiki pages")
+    elif wiki_depth != "none":
+        print(f"  [6/{total_steps}] Skipping wiki (no LLM configured)...")
+
+    # Step 7 (or 6): Export
+    step_num = total_steps
+    print(f"  [{step_num}/{total_steps}] Exporting graph...")
+    graph = build_codespace_graph(
+        repo_name, clusters, all_symbols, func_edges, mod_edges,
+        summaries=summaries, wiki_paths=wiki_paths,
+    )
 
     with open(args.output, "w") as f:
         json.dump(graph, f, indent=2)
@@ -114,6 +145,15 @@ def _serve(graph_output: str, port: int) -> None:
     dest = dist_dir / "codespace_graph.json"
     shutil.copy2(graph_output, dest)
     print(f"\n  Copied {graph_output} -> {dest}")
+
+    # Copy wiki/ directory if it exists
+    wiki_src = Path(graph_output).parent / "wiki"
+    if wiki_src.exists():
+        wiki_dest = dist_dir / "wiki"
+        if wiki_dest.exists():
+            shutil.rmtree(wiki_dest)
+        shutil.copytree(wiki_src, wiki_dest)
+        print(f"  Copied wiki/ -> {wiki_dest}")
 
     # Start HTTP server
     handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(dist_dir))

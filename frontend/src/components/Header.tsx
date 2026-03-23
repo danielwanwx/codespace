@@ -1,6 +1,6 @@
 import { useStore } from '../store'
 
-export function Header({ repoName }: { repoName: string }) {
+export function Header({ repoName: _repoName }: { repoName: string }) {
   const graph = useStore((s) => s.graph)
 
   const symbolCount = graph?.nodes.filter((n) => n.type === 'function' || n.type === 'class').length ?? 0
@@ -8,30 +8,23 @@ export function Header({ repoName }: { repoName: string }) {
   const moduleCount = graph?.nodes.filter((n) => n.type === 'module').length ?? 0
 
   return (
-    <div className="h-10 glass-panel border-t-0 border-x-0 flex items-center px-5 shrink-0 gap-3">
-      <span className="text-xs font-medium tracking-[0.15em] uppercase text-[var(--text-primary)]">
-        CODESPACE
-      </span>
-      <span className="text-[var(--text-muted)]">&middot;</span>
-      <span className="text-xs font-medium tracking-[0.15em] uppercase text-[var(--accent-cyan)]">
-        {repoName || '\u2014'}
+    <div className="h-[52px] flex items-center px-8 shrink-0 border-b border-[var(--panel-border)]">
+      <span className="font-['Barlow_Condensed'] text-[18px] font-semibold tracking-[0.35em] uppercase text-[#111] mr-10">
+        Codespace
       </span>
 
       {graph && (
-        <>
-          <span className="text-[var(--text-muted)]">&middot;</span>
-          <span className="text-[11px] tracking-[0.1em] uppercase text-[var(--text-secondary)]">
-            {symbolCount} SYMBOLS
+        <div className="flex gap-6">
+          <span className="text-[12px] text-[var(--text-label)]">
+            <strong className="font-semibold text-[rgba(0,0,0,0.7)] mr-0.5">{symbolCount}</strong> symbols
           </span>
-          <span className="text-[var(--text-muted)]">&middot;</span>
-          <span className="text-[11px] tracking-[0.1em] uppercase text-[var(--text-secondary)]">
-            {edgeCount} EDGES
+          <span className="text-[12px] text-[var(--text-label)]">
+            <strong className="font-semibold text-[rgba(0,0,0,0.7)] mr-0.5">{edgeCount}</strong> edges
           </span>
-          <span className="text-[var(--text-muted)]">&middot;</span>
-          <span className="text-[11px] tracking-[0.1em] uppercase text-[var(--text-secondary)]">
-            {moduleCount} MODULES
+          <span className="text-[12px] text-[var(--text-label)]">
+            <strong className="font-semibold text-[rgba(0,0,0,0.7)] mr-0.5">{moduleCount}</strong> modules
           </span>
-        </>
+        </div>
       )}
     </div>
   )

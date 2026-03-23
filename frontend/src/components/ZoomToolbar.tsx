@@ -1,9 +1,9 @@
 import { useStore } from '../store'
 
 const LEVELS = [
-  { key: 'repo' as const, label: 'REPO' },
-  { key: 'module' as const, label: 'MODULE' },
-  { key: 'function' as const, label: 'FUNC' },
+  { key: 'repo' as const, label: 'Repo' },
+  { key: 'module' as const, label: 'Module' },
+  { key: 'function' as const, label: 'Func' },
 ]
 
 export function ZoomToolbar() {
@@ -11,7 +11,7 @@ export function ZoomToolbar() {
   const setZoomLevel = useStore((s) => s.setZoomLevel)
 
   return (
-    <div className="absolute top-4 right-4 z-10 flex flex-col gap-0 border border-[var(--panel-border)] bg-[rgba(24,31,34,0.9)] backdrop-blur-sm">
+    <div className="absolute top-5 right-6 z-10 flex gap-0">
       {LEVELS.map(({ key, label }) => {
         const isActive = zoomLevel === key
         return (
@@ -19,10 +19,10 @@ export function ZoomToolbar() {
             key={key}
             onClick={() => setZoomLevel(key)}
             className={[
-              'px-3 py-2 text-[10px] font-medium uppercase tracking-[0.15em] transition-colors border-b border-[var(--panel-border)] last:border-b-0',
+              'px-4 py-1.5 text-[11px] uppercase tracking-[0.12em] cursor-pointer border-none transition-all',
               isActive
-                ? 'text-[var(--accent-cyan)] border-l-2 border-l-[var(--accent-cyan)] glow-cyan bg-[rgba(0,229,255,0.06)]'
-                : 'text-[var(--text-muted)] border-l-2 border-l-transparent hover:text-[var(--text-primary)] hover:bg-[rgba(24,31,34,0.5)]',
+                ? 'text-white bg-[#111] font-semibold'
+                : 'text-[rgba(0,0,0,0.2)] bg-transparent font-normal hover:text-[rgba(0,0,0,0.5)]',
             ].join(' ')}
           >
             {label}

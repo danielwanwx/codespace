@@ -15,6 +15,7 @@ interface GraphNode {
   parent: string | null
   repo: string
   summary_l1: string | null
+  wiki_path?: string | null
   [key: string]: unknown
 }
 

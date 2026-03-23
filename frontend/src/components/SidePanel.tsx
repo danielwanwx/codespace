@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { useStore } from '../store'
 import type { GraphNode, GraphEdge } from '../store'
-import { explainFunction } from '../lib/llm'
+import { explainFunction, explainModule } from '../lib/llm'
 
 /** Extract a short display name from a node's label (strip signature noise) */
 function displayName(node: GraphNode): string {
   const name = node.semantic_label || node.label
-  // For functions/classes, just show the identifier before the first '('
   const paren = name.indexOf('(')
   return paren > 0 ? name.slice(0, paren) : name
 }
@@ -19,15 +18,11 @@ function shortName(qualifiedId: string): string {
 
 // --- Sub-components ---
 
-function SectionDivider() {
-  return <div className="border-t border-[var(--panel-border)]" style={{ opacity: 0.5 }} />
-}
-
-function SectionHeader({ children }: { children: React.ReactNode }) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-[11px] font-medium uppercase tracking-[0.1em] text-[var(--text-muted)] mb-2 pb-1 border-b border-[var(--panel-border)]" style={{ borderBottomWidth: '1px' }}>
+    <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#111] mt-5 mb-2">
       {children}
-    </h3>
+    </div>
   )
 }
 
@@ -35,20 +30,11 @@ function CloseButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent-cyan)] transition-colors"
+      className="absolute top-5 right-5 text-[rgba(0,0,0,0.2)] hover:text-[#111] transition-colors text-[22px] leading-none cursor-pointer border-none bg-transparent p-0"
       aria-label="Close panel"
     >
       &times;
     </button>
-  )
-}
-
-function DataField({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="mb-1">
-      <span className="text-[11px] uppercase tracking-[0.1em] text-[var(--text-muted)]">{label}</span>
-      <div className="text-[14px] text-[var(--text-primary)]">{value}</div>
-    </div>
   )
 }
 
@@ -59,6 +45,7 @@ function ModulePanel({ node, children, edges }: {
   children: GraphNode[]
   edges: GraphEdge[]
 }) {
+  const selectNode = useStore((s) => s.selectNode)
   const path = (node.path as string) ?? ''
   const fileCount = (node.file_count as number) ?? 0
   const symbolCount = (node.symbol_count as number) ?? 0
@@ -66,113 +53,106 @@ function ModulePanel({ node, children, edges }: {
   const functions = children.filter((c) => c.type === 'function')
   const classes = children.filter((c) => c.type === 'class')
 
-  // Outgoing edges: this module is the source
   const outgoing = edges.filter((e) => e.source === node.id && e.target !== node.id)
-  // Incoming edges: this module is the target
   const incoming = edges.filter((e) => e.target === node.id && e.source !== node.id)
 
   return (
     <>
-      {/* Header */}
-      <div className="px-5 pt-5 pb-3 pr-12">
-        <h2 className="text-sm font-medium uppercase tracking-[0.15em] text-[var(--text-primary)] leading-tight">
+      {/* Title */}
+      <div className="mb-1.5 pr-10">
+        <h2 className="font-['Barlow_Condensed'] text-[26px] font-bold tracking-[0.02em] text-black leading-tight">
           {node.semantic_label || node.label}
         </h2>
-        {path && (
-          <p className="text-[12px] text-[var(--text-muted)] mt-0.5">{path}</p>
-        )}
       </div>
 
-      <SectionDivider />
+      {/* Meta */}
+      <div className="flex items-center gap-3 mb-5 pb-4 border-b border-[rgba(0,0,0,0.06)]">
+        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-[rgba(0,0,0,0.3)]">Module</span>
+        {path && <span className="text-[12px] text-[rgba(0,0,0,0.35)] font-['JetBrains_Mono',monospace]">{path}</span>}
+      </div>
 
       {/* Stats */}
-      <div className="px-5 py-3 flex gap-4">
-        <DataField label="files" value={fileCount} />
-        <DataField label="symbols" value={symbolCount} />
+      <div className="flex gap-4 mb-5">
+        <span className="text-[12px] text-[rgba(0,0,0,0.35)]">
+          <strong className="font-bold text-[rgba(0,0,0,0.7)] mr-0.5">{fileCount}</strong> files
+        </span>
+        <span className="text-[12px] text-[rgba(0,0,0,0.35)]">
+          <strong className="font-bold text-[rgba(0,0,0,0.7)] mr-0.5">{symbolCount}</strong> symbols
+        </span>
+        <span className="text-[12px] text-[rgba(0,0,0,0.35)]">
+          <strong className="font-bold text-[rgba(0,0,0,0.7)] mr-0.5">{outgoing.length + incoming.length}</strong> edges
+        </span>
       </div>
-
-      <SectionDivider />
 
       {/* Functions list */}
       {functions.length > 0 && (
         <>
-          <div className="px-5 py-3">
-            <SectionHeader>Functions</SectionHeader>
-            <ul className="space-y-0.5">
-              {functions.map((fn) => (
-                <FunctionListItem key={fn.id} node={fn} />
-              ))}
-            </ul>
-          </div>
-          <SectionDivider />
+          <SectionLabel>Functions ({functions.length})</SectionLabel>
+          <ul className="list-none p-0 m-0">
+            {functions.map((fn) => {
+              const sig = (fn.signature as string) ?? displayName(fn)
+              const shortSig = sig.length > 40 ? displayName(fn) + '(...)' : sig
+              return (
+                <li
+                  key={fn.id}
+                  onClick={() => selectNode(fn.id)}
+                  className="py-1 text-[13px] text-[rgba(0,0,0,0.55)] cursor-pointer hover:text-[#111] transition-colors overflow-hidden text-ellipsis whitespace-nowrap"
+                  title={sig}
+                >
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[rgba(0,0,0,0.2)] mr-1.5 align-middle" />
+                  {shortSig}
+                </li>
+              )
+            })}
+          </ul>
         </>
       )}
 
       {/* Classes list */}
       {classes.length > 0 && (
         <>
-          <div className="px-5 py-3">
-            <SectionHeader>Classes</SectionHeader>
-            <ul className="space-y-0.5">
-              {classes.map((cls) => (
-                <li key={cls.id} className="text-[13px] text-[var(--text-secondary)] flex items-start gap-1.5 py-0.5">
-                  <span className="text-[var(--accent-blue)] mt-0.5 shrink-0">&loz;</span>
-                  <span>{displayName(cls)}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <SectionDivider />
+          <SectionLabel>Classes ({classes.length})</SectionLabel>
+          <ul className="list-none p-0 m-0">
+            {classes.map((cls) => (
+              <li
+                key={cls.id}
+                onClick={() => selectNode(cls.id)}
+                className="py-1 text-[13px] text-[rgba(0,0,0,0.55)] cursor-pointer hover:text-[#111] transition-colors"
+              >
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#4FC3F7] mr-1.5 align-middle" />
+                {displayName(cls)}
+              </li>
+            ))}
+          </ul>
         </>
       )}
 
       {/* Connections */}
       {(outgoing.length > 0 || incoming.length > 0) && (
-        <div className="px-5 py-3">
-          <SectionHeader>Connections</SectionHeader>
-          <ul className="space-y-0.5 text-[13px]">
+        <>
+          <SectionLabel>Connections</SectionLabel>
+          <ul className="list-none p-0 m-0">
             {outgoing.map((e, i) => (
-              <li key={`out-${i}`} className="text-[var(--text-secondary)] flex items-start gap-1.5">
-                <span className="text-[var(--accent-cyan)] shrink-0">&rarr;</span>
-                <span>
-                  <span>{shortName(e.target)}</span>
-                  <span className="text-[var(--text-muted)] ml-1">({e.weight} call{e.weight !== 1 ? 's' : ''})</span>
-                </span>
+              <li key={`out-${i}`} className="py-1 text-[13px] text-[rgba(0,0,0,0.55)]">
+                <span className="text-[rgba(0,0,0,0.25)] mr-1">&rarr;</span>
+                {shortName(e.target)}
+                <span className="text-[rgba(0,0,0,0.25)] ml-1">({e.weight} call{e.weight !== 1 ? 's' : ''})</span>
               </li>
             ))}
             {incoming.map((e, i) => (
-              <li key={`in-${i}`} className="text-[var(--text-secondary)] flex items-start gap-1.5">
-                <span className="text-[#81C784] shrink-0">&larr;</span>
-                <span>
-                  <span>{shortName(e.source)}</span>
-                  <span className="text-[var(--text-muted)] ml-1">({e.weight} call{e.weight !== 1 ? 's' : ''})</span>
-                </span>
+              <li key={`in-${i}`} className="py-1 text-[13px] text-[rgba(0,0,0,0.55)]">
+                <span className="text-[rgba(0,0,0,0.25)] mr-1">&larr;</span>
+                {shortName(e.source)}
+                <span className="text-[rgba(0,0,0,0.25)] ml-1">({e.weight} call{e.weight !== 1 ? 's' : ''})</span>
               </li>
             ))}
           </ul>
-        </div>
+        </>
       )}
+
+      {/* Explain with AI */}
+      <ExplainWithAI node={node} />
     </>
-  )
-}
-
-function FunctionListItem({ node }: { node: GraphNode }) {
-  const selectNode = useStore((s) => s.selectNode)
-  const sig = (node.signature as string) ?? displayName(node)
-  // Show short signature: just the name + params
-  const shortSig = sig.length > 40 ? displayName(node) + '(...)' : sig
-
-  return (
-    <li className="text-[13px] text-[var(--text-secondary)] flex items-start gap-1.5">
-      <span className="text-[var(--text-muted)] mt-0.5 shrink-0">&bull;</span>
-      <button
-        onClick={() => selectNode(node.id)}
-        className="text-left hover:text-[var(--accent-cyan)] transition-colors truncate py-0.5 border-l-2 border-transparent hover:border-[var(--accent-cyan)] pl-1 -ml-1"
-        title={sig}
-      >
-        {shortSig}
-      </button>
-    </li>
   )
 }
 
@@ -190,12 +170,10 @@ function FunctionPanel({ node }: { node: GraphNode }) {
   const calls = (node.calls as string[]) ?? []
   const calledBy = (node.called_by as string[]) ?? []
 
-  // Build a lookup of all node ids for linking
   const nodeMap = new Map<string, GraphNode>()
   if (graph) {
     for (const n of graph.nodes) {
       nodeMap.set(n.id, n)
-      // Also index by short name for calls list matching
       const bare = shortName(n.id)
       if (!nodeMap.has(bare)) {
         nodeMap.set(bare, n)
@@ -207,102 +185,96 @@ function FunctionPanel({ node }: { node: GraphNode }) {
 
   return (
     <>
-      {/* Header */}
-      <div className="px-5 pt-5 pb-3 pr-12">
-        <h2 className="text-sm font-medium uppercase tracking-[0.15em] text-[var(--text-primary)] leading-tight">
+      {/* Title */}
+      <div className="mb-1.5 pr-10">
+        <h2 className="font-['Barlow_Condensed'] text-[26px] font-bold tracking-[0.02em] text-black leading-tight">
           {displayName(node)}
         </h2>
-        {location && (
-          <p className="text-[12px] text-[var(--text-muted)] mt-0.5">{location}</p>
-        )}
-        {className && (
-          <p className="text-[11px] text-[var(--text-muted)] mt-0.5 uppercase tracking-[0.1em]">class: {className}</p>
-        )}
       </div>
 
-      <SectionDivider />
+      {/* Meta */}
+      <div className="flex items-center gap-3 mb-5 pb-4 border-b border-[rgba(0,0,0,0.06)]">
+        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-[rgba(0,0,0,0.3)]">
+          {node.type === 'class' ? 'Class' : 'Function'}
+        </span>
+        {location && <span className="text-[12px] text-[rgba(0,0,0,0.35)] font-['JetBrains_Mono',monospace]">{location}</span>}
+      </div>
+
+      {className && (
+        <div className="text-[12px] text-[rgba(0,0,0,0.35)] mb-3">
+          class: <span className="text-[rgba(0,0,0,0.55)]">{className}</span>
+        </div>
+      )}
 
       {/* Signature */}
       {signature && (
         <>
-          <div className="px-5 py-3">
-            <pre className="text-[13px] text-[var(--accent-blue)] whitespace-pre-wrap break-all leading-relaxed">
-              {signature}
-            </pre>
+          <SectionLabel>Signature</SectionLabel>
+          <div className="text-[13px] font-medium text-[rgba(0,0,0,0.7)] leading-relaxed p-2.5 bg-[rgba(0,0,0,0.025)] font-['JetBrains_Mono',monospace] break-all">
+            {signature}
           </div>
-          <SectionDivider />
         </>
       )}
 
-      {/* Docstring */}
+      {/* Description */}
       {docstring && (
         <>
-          <div className="px-5 py-3">
-            <p className="text-[13px] text-[var(--text-secondary)] italic leading-relaxed">
-              &ldquo;{docstring}&rdquo;
-            </p>
-          </div>
-          <SectionDivider />
+          <SectionLabel>Description</SectionLabel>
+          <p className="text-[14px] text-[rgba(0,0,0,0.55)] leading-[1.8]">{docstring}</p>
         </>
       )}
 
       {/* Calls */}
       {calls.length > 0 && (
         <>
-          <div className="px-5 py-3">
-            <SectionHeader>Calls</SectionHeader>
-            <ul className="space-y-0.5">
-              {calls.map((callName) => {
-                const target = nodeMap.get(callName)
-                return (
-                  <li key={callName} className="text-[13px] text-[var(--text-secondary)] flex items-start gap-1.5">
-                    <span className="text-[var(--text-muted)] mt-0.5 shrink-0">&bull;</span>
-                    {target ? (
-                      <button
-                        onClick={() => selectNode(target.id)}
-                        className="text-left hover:text-[var(--accent-cyan)] transition-colors border-l-2 border-transparent hover:border-[var(--accent-cyan)] pl-1 -ml-1 py-0.5"
-                      >
-                        {callName}
-                      </button>
-                    ) : (
-                      <span className="text-[var(--text-muted)]">{callName}</span>
-                    )}
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-          <SectionDivider />
+          <SectionLabel>Calls ({calls.length})</SectionLabel>
+          <ul className="list-none p-0 m-0">
+            {calls.map((callName) => {
+              const target = nodeMap.get(callName)
+              return (
+                <li key={callName} className="py-1 text-[13px] text-[rgba(0,0,0,0.55)]">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[rgba(0,0,0,0.15)] mr-1.5 align-middle" />
+                  {target ? (
+                    <span
+                      onClick={() => selectNode(target.id)}
+                      className="cursor-pointer hover:text-[#111] transition-colors"
+                    >
+                      {callName}
+                    </span>
+                  ) : (
+                    <span className="text-[rgba(0,0,0,0.25)]">{callName}</span>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
         </>
       )}
 
       {/* Called by */}
       {calledBy.length > 0 && (
         <>
-          <div className="px-5 py-3">
-            <SectionHeader>Called By</SectionHeader>
-            <ul className="space-y-0.5">
-              {calledBy.map((callerId) => {
-                const caller = nodeMap.get(callerId)
-                return (
-                  <li key={callerId} className="text-[13px] text-[var(--text-secondary)] flex items-start gap-1.5">
-                    <span className="text-[var(--text-muted)] mt-0.5 shrink-0">&bull;</span>
-                    {caller ? (
-                      <button
-                        onClick={() => selectNode(caller.id)}
-                        className="text-left hover:text-[var(--accent-cyan)] transition-colors border-l-2 border-transparent hover:border-[var(--accent-cyan)] pl-1 -ml-1 py-0.5"
-                      >
-                        {shortName(callerId)}
-                      </button>
-                    ) : (
-                      <span className="text-[var(--text-muted)]">{shortName(callerId)}</span>
-                    )}
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-          <SectionDivider />
+          <SectionLabel>Called By ({calledBy.length})</SectionLabel>
+          <ul className="list-none p-0 m-0">
+            {calledBy.map((callerId) => {
+              const caller = nodeMap.get(callerId)
+              return (
+                <li key={callerId} className="py-1 text-[13px] text-[rgba(0,0,0,0.55)]">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[rgba(0,0,0,0.15)] mr-1.5 align-middle" />
+                  {caller ? (
+                    <span
+                      onClick={() => selectNode(caller.id)}
+                      className="cursor-pointer hover:text-[#111] transition-colors"
+                    >
+                      {shortName(callerId)}
+                    </span>
+                  ) : (
+                    <span className="text-[rgba(0,0,0,0.25)]">{shortName(callerId)}</span>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
         </>
       )}
 
@@ -329,28 +301,57 @@ function ExplainWithAI({ node }: { node: GraphNode }) {
   const hasKey = llmProvider !== null && llmApiKey.length > 0
 
   async function handleExplain() {
+    // If summary_l1 exists (pre-generated), use it directly
+    if (node.summary_l1) {
+      setExplanation(node.id, node.summary_l1)
+      return
+    }
+
     if (!hasKey || !llmProvider) return
     setLoading(true)
     setError(null)
     try {
-      const signature = (node.signature as string) ?? node.label
-      const docstring = (node.docstring as string) ?? ''
-      const calls = (node.calls as string[]) ?? []
-      const calledBy = (node.called_by as string[]) ?? []
-      // Derive module name from parent or node id
-      const parentId = node.parent ?? ''
-      const moduleName = parentId ? shortName(parentId) : node.repo
       const globalContext = graph?.global_context ?? ''
 
-      const result = await explainFunction(llmProvider, llmApiKey, llmModel, {
-        signature,
-        docstring,
-        calls,
-        calledBy,
-        moduleName,
-        globalContext,
-      })
-      setExplanation(node.id, result)
+      if (node.type === 'module') {
+        const children = graph?.nodes.filter((n) => n.parent === node.id) ?? []
+        const symbolNames = children.map((c) => displayName(c))
+        const edges = graph?.edges ?? []
+        const outgoing = edges
+          .filter((e) => e.source === node.id && e.target !== node.id)
+          .map((e) => shortName(e.target))
+        const incoming = edges
+          .filter((e) => e.target === node.id && e.source !== node.id)
+          .map((e) => shortName(e.source))
+
+        const result = await explainModule(llmProvider, llmApiKey, llmModel, {
+          moduleName: node.semantic_label || node.label,
+          path: (node.path as string) ?? '',
+          symbols: symbolNames,
+          fileCount: (node.file_count as number) ?? 0,
+          outgoing,
+          incoming,
+          globalContext,
+        })
+        setExplanation(node.id, result)
+      } else {
+        const signature = (node.signature as string) ?? node.label
+        const docstring = (node.docstring as string) ?? ''
+        const calls = (node.calls as string[]) ?? []
+        const calledBy = (node.called_by as string[]) ?? []
+        const parentId = node.parent ?? ''
+        const moduleName = parentId ? shortName(parentId) : node.repo
+
+        const result = await explainFunction(llmProvider, llmApiKey, llmModel, {
+          signature,
+          docstring,
+          calls,
+          calledBy,
+          moduleName,
+          globalContext,
+        })
+        setExplanation(node.id, result)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to get explanation')
     } finally {
@@ -358,34 +359,53 @@ function ExplainWithAI({ node }: { node: GraphNode }) {
     }
   }
 
+  const wikiPath = node.wiki_path as string | undefined
+
   return (
-    <div className="px-5 py-4">
+    <div className="mt-5">
+      <SectionLabel>AI Analysis</SectionLabel>
       {cached ? (
-        <div className="text-[13px] text-[var(--text-secondary)] leading-relaxed glass-panel p-3">
-          {cached}
+        <div>
+          <div className="text-[14px] text-[rgba(0,0,0,0.55)] leading-[1.8]">
+            <strong className="block text-[10px] font-bold tracking-[0.12em] uppercase text-[rgba(0,0,0,0.25)] mb-2">Explanation</strong>
+            {cached}
+          </div>
+          {wikiPath && (
+            <a
+              href={wikiPath}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-2.5 text-[12px] font-medium text-[rgba(0,0,0,0.35)] no-underline tracking-[0.04em] hover:text-[#111] transition-colors"
+            >
+              View full documentation &rarr;
+            </a>
+          )}
         </div>
       ) : !hasKey ? (
-        <div className="w-full py-2.5 glass-panel text-center text-[12px] text-[var(--text-muted)] select-none uppercase tracking-[0.1em]">
-          Configure API key in settings
+        <div className="text-[12px] text-[rgba(0,0,0,0.25)]">
+          Configure API key in settings to enable AI explanations
         </div>
       ) : (
         <>
           <button
             onClick={handleExplain}
             disabled={loading}
-            className="w-full py-2.5 border border-[var(--accent-cyan)] text-[var(--accent-cyan)] hover:bg-[rgba(0,229,255,0.08)] disabled:border-[var(--panel-border)] disabled:text-[var(--text-muted)] text-[12px] font-medium uppercase tracking-[0.15em] transition-colors flex items-center justify-center gap-2"
+            className="inline-block mt-2 px-7 py-2.5 bg-[#111] text-white border-none cursor-pointer text-[12px] font-medium uppercase tracking-[0.15em] hover:opacity-80 transition-opacity disabled:opacity-40"
           >
-            {loading ? (
-              <>
-                <span className="inline-block w-4 h-4 border border-[var(--text-muted)] border-t-transparent rounded-full animate-spin" />
-                ANALYZING...
-              </>
-            ) : (
-              'EXPLAIN WITH AI'
-            )}
+            {loading ? 'ANALYZING...' : 'EXPLAIN WITH AI'}
           </button>
           {error && (
             <p className="mt-2 text-[11px] text-[var(--error-red)]">{error}</p>
+          )}
+          {wikiPath && (
+            <a
+              href={wikiPath}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block mt-2.5 text-[12px] font-medium text-[rgba(0,0,0,0.35)] no-underline tracking-[0.04em] hover:text-[#111] transition-colors"
+            >
+              View full documentation &rarr;
+            </a>
           )}
         </>
       )}
@@ -397,15 +417,19 @@ function ExplainWithAI({ node }: { node: GraphNode }) {
 
 function RepoPanel({ node }: { node: GraphNode }) {
   return (
-    <div className="px-5 pt-5 pb-3 pr-12">
-      <h2 className="text-sm font-medium uppercase tracking-[0.15em] text-[var(--text-primary)] leading-tight">
-        {node.label}
-      </h2>
-      <p className="text-[11px] text-[var(--text-muted)] mt-1 uppercase tracking-[0.1em]">Repository</p>
+    <>
+      <div className="mb-1.5 pr-10">
+        <h2 className="font-['Barlow_Condensed'] text-[26px] font-bold tracking-[0.02em] text-black leading-tight">
+          {node.label}
+        </h2>
+      </div>
+      <div className="flex items-center gap-3 mb-5 pb-4 border-b border-[rgba(0,0,0,0.06)]">
+        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-[rgba(0,0,0,0.3)]">Repository</span>
+      </div>
       {node.summary_l1 && (
-        <p className="text-[13px] text-[var(--text-secondary)] mt-3 leading-relaxed">{node.summary_l1}</p>
+        <p className="text-[14px] text-[rgba(0,0,0,0.55)] leading-[1.8]">{node.summary_l1}</p>
       )}
-    </div>
+    </>
   )
 }
 
@@ -418,20 +442,16 @@ export function SidePanel() {
 
   const isOpen = selectedNodeId !== null && graph !== null
 
-  // Look up the selected node
   const selectedNode = isOpen
     ? graph.nodes.find((n) => n.id === selectedNodeId) ?? null
     : null
 
-  // For module nodes: find children and relevant edges
   const children = selectedNode && (selectedNode.type === 'module')
     ? graph!.nodes.filter((n) => n.parent === selectedNode.id)
     : []
 
-  // Module-level edges (edges between modules, not between functions)
   const moduleEdges = selectedNode && selectedNode.type === 'module' && graph
     ? graph.edges.filter((e) => {
-        // Only module-level edges (edges where source or target is a module id)
         const isModuleSource = graph.nodes.some((n) => n.id === e.source && n.type === 'module')
         const isModuleTarget = graph.nodes.some((n) => n.id === e.target && n.type === 'module')
         return (isModuleSource || isModuleTarget) &&
@@ -442,14 +462,13 @@ export function SidePanel() {
   return (
     <div
       className={[
-        'h-full glass-panel corner-accents border-t-0 border-b-0 border-r-0 overflow-y-auto overflow-x-hidden',
+        'h-full border-l border-[rgba(0,0,0,0.06)] overflow-y-auto overflow-x-hidden',
         'transition-all duration-300 ease-in-out',
         'flex flex-col relative shrink-0',
         isOpen && selectedNode ? 'w-[380px] opacity-100' : 'w-0 opacity-0',
       ].join(' ')}
     >
-      {/* Inner wrapper prevents content from collapsing during transition */}
-      <div className="w-[380px] min-w-[380px]">
+      <div className="w-[380px] min-w-[380px] p-7">
         {selectedNode && (
           <>
             <CloseButton onClick={() => selectNode(null)} />

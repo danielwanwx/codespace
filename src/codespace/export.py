@@ -14,6 +14,8 @@ def build_codespace_graph(
     global_context: str = "",
     summaries: dict[str, str] | None = None,
     wiki_paths: dict[str, str] | None = None,
+    importance_scores: dict[str, float] | None = None,
+    categories: dict[str, str] | None = None,
 ) -> dict:
     """Assemble the full codespace_graph.json structure."""
     summaries = summaries or {}
@@ -69,6 +71,8 @@ def build_codespace_graph(
             "called_by": sym.called_by,
             "summary_l1": summaries.get(sym.qualified_name),
             "wiki_path": wiki_paths.get(sym.qualified_name),
+            "importance": importance_scores.get(sym.qualified_name) if importance_scores else None,
+            "category": categories.get(sym.qualified_name) if categories else None,
         })
 
     # Module-level edges

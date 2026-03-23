@@ -907,7 +907,17 @@ function transformForD3(
 
   // Function view: function/class nodes grouped by SAME communities as module view
   const childTypes = ['function', 'class']
-  const childNodes = data.nodes.filter((n) => childTypes.includes(n.type) && n.parent && moduleIds.has(n.parent))
+  const IMPORTANCE_THRESHOLD = 0.05
+  const childNodes = data.nodes.filter((n) => {
+    if (!childTypes.includes(n.type) || !n.parent || !moduleIds.has(n.parent)) return false
+    const category = n.category as string | undefined
+    const importance = n.importance as number | undefined
+    // Always filter test-category nodes
+    if (category === 'test') return false
+    // Filter nodes below threshold (if importance data exists)
+    if (importance != null && importance < IMPORTANCE_THRESHOLD) return false
+    return true
+  })
 
   const nodes: SimNode[] = childNodes.map((node) => {
     const comm = modToCommunity[node.parent!] ?? node.parent!

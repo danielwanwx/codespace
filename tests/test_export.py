@@ -41,3 +41,34 @@ def test_export_valid_json():
     graph = build_codespace_graph("r", clusters, [], [], {})
     # Should be JSON-serializable
     json.dumps(graph)
+
+
+def test_export_includes_importance_fields():
+    clusters = [Cluster(id="r::auth", name="auth", path="src/auth", parent_id="r")]
+    symbols = [SymbolEntry(
+        qualified_name="r::auth.service::login", kind="function",
+        signature="login()", file="f.py", line=1,
+    )]
+    importance_scores = {"r::auth.service::login": 0.85}
+    categories = {"r::auth.service::login": "api"}
+
+    graph = build_codespace_graph(
+        "r", clusters, symbols, [], {},
+        importance_scores=importance_scores,
+        categories=categories,
+    )
+    func_node = next(n for n in graph["nodes"] if n["type"] == "function")
+    assert func_node["importance"] == 0.85
+    assert func_node["category"] == "api"
+
+
+def test_export_defaults_without_scores():
+    clusters = [Cluster(id="r::m", name="m", path="src/m", parent_id="r")]
+    symbols = [SymbolEntry(
+        qualified_name="r::m::fn", kind="function",
+        signature="fn()", file="f.py", line=1,
+    )]
+    graph = build_codespace_graph("r", clusters, symbols, [], {})
+    func_node = next(n for n in graph["nodes"] if n["type"] == "function")
+    assert func_node.get("importance") is None
+    assert func_node.get("category") is None

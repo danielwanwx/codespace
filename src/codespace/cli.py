@@ -9,6 +9,7 @@ from codespace.graph_aggregator import aggregate_edges
 from codespace.clusters import form_clusters
 from codespace.cluster_namer import name_clusters
 from codespace.export import build_codespace_graph
+from codespace.importance import score_importance, classify_symbols
 from codespace.wiki_generator import generate_wiki_pages
 from codespace.llm import LLMClient
 
@@ -43,7 +44,7 @@ def main():
     if wiki_depth is None:
         wiki_depth = "modules" if (args.llm_provider and args.llm_provider != "none") else "none"
 
-    total_steps = 7 if wiki_depth != "none" else 6
+    total_steps = 8 if wiki_depth != "none" else 7
 
     # Step 1: Index
     print(f"  [1/{total_steps}] Indexing repo...")
@@ -67,11 +68,18 @@ def main():
     func_edges, mod_edges = aggregate_edges(all_symbols, file_contents)
     print(f"         Resolved {len(func_edges)} function edges, {len(mod_edges)} module edges")
 
-    # Step 4: Form clusters
-    print(f"  [4/{total_steps}] Forming clusters...")
+    # Step 4: Score importance
+    print(f"  [4/{total_steps}] Scoring symbol importance...")
+    importance_scores = score_importance(all_symbols, func_edges)
+    categories = classify_symbols(all_symbols, func_edges)
+    test_count = sum(1 for c in categories.values() if c == "test")
+    print(f"         {test_count}/{len(categories)} symbols classified as test/noise")
+
+    # Step 5: Form clusters
+    print(f"  [5/{total_steps}] Forming clusters...")
     clusters = form_clusters(modules, all_symbols, repo_name)
 
-    # Step 5: Name clusters (optional LLM)
+    # Step 6: Name clusters (optional LLM)
     llm_client = None
     if args.llm_provider and args.llm_provider != "none":
         llm_client = LLMClient(
@@ -79,9 +87,9 @@ def main():
             api_key=args.llm_api_key or "",
             model=args.llm_model or "",
         )
-        print(f"  [5/{total_steps}] Naming clusters with LLM...")
+        print(f"  [6/{total_steps}] Naming clusters with LLM...")
     else:
-        print(f"  [5/{total_steps}] Using directory names (no LLM)...")
+        print(f"  [6/{total_steps}] Using directory names (no LLM)...")
 
     symbols_by_module: dict[str, list] = {}
     for sym in all_symbols:
@@ -91,11 +99,11 @@ def main():
             symbols_by_module.setdefault(mod_key, []).append(sym)
     name_clusters(clusters, symbols_by_module, llm_client=llm_client)
 
-    # Step 6: Generate wiki pages (optional LLM)
+    # Step 7: Generate wiki pages (optional LLM)
     wiki_paths: dict[str, str] = {}
     summaries: dict[str, str] = {}
     if wiki_depth != "none" and llm_client:
-        print(f"  [6/{total_steps}] Generating wiki pages ({wiki_depth})...")
+        print(f"  [7/{total_steps}] Generating wiki pages ({wiki_depth})...")
         output_dir = os.path.join(os.path.dirname(os.path.abspath(args.output)), "wiki")
         wiki_paths, summaries = generate_wiki_pages(
             clusters, all_symbols, file_contents,
@@ -104,14 +112,15 @@ def main():
         )
         print(f"         Generated {len(wiki_paths)} wiki pages")
     elif wiki_depth != "none":
-        print(f"  [6/{total_steps}] Skipping wiki (no LLM configured)...")
+        print(f"  [7/{total_steps}] Skipping wiki (no LLM configured)...")
 
-    # Step 7 (or 6): Export
+    # Final step: Export
     step_num = total_steps
     print(f"  [{step_num}/{total_steps}] Exporting graph...")
     graph = build_codespace_graph(
         repo_name, clusters, all_symbols, func_edges, mod_edges,
         summaries=summaries, wiki_paths=wiki_paths,
+        importance_scores=importance_scores, categories=categories,
     )
 
     with open(args.output, "w") as f:

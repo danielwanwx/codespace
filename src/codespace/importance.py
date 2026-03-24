@@ -99,6 +99,9 @@ def classify_symbols(
         elif fan_in >= 1 and fan_out >= 4 and not bare_name.startswith("_"):
             # Public pipeline function with substantial fan-out → api
             categories[sym.qualified_name] = "api"
+        elif bare_name.startswith("_") and fan_in == 0 and cross_in == 0:
+            # Private function with no callers → orphaned helper util
+            categories[sym.qualified_name] = "util"
         elif fan_in == 0 and cross_in == 0 and fan_out <= 2:
             # No callers and low fan-out → test/noise
             categories[sym.qualified_name] = "test"

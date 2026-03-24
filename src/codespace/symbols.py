@@ -34,8 +34,9 @@ def extract_symbols(
 
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            if node.name.startswith("__") and node.name != "__init__":
-                continue
+            if node.name.startswith("__") and node.name.endswith("__"):
+                if node.name not in ("__init__", "__post_init__"):
+                    continue
             parent = getattr(node, "_parent", None)
             is_method = isinstance(parent, ast.ClassDef)
             class_name = parent.name if is_method else ""

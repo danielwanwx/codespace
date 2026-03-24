@@ -233,8 +233,8 @@ export function GraphView() {
     // Separate parameters for module vs function view
     const chargeStrength = isFuncView ? -30 : (n <= 12 ? -45 : -45 - (n - 12) * 8)
     const collisionRadius = isFuncView ? 50 : (n <= 12 ? 18 : 18 + n * 1.5)
-    const driftAmplitude = isFuncView ? 0.12 : (n <= 12 ? 0.12 : Math.max(0.10 - n * 0.001, 0.04))
-    const driftPull = isFuncView ? 0.002 : (n <= 50 ? 0.001 : 0.0003)
+    const driftAmplitude = isFuncView ? 0.12 : (n <= 12 ? 0.06 : Math.max(0.05 - n * 0.0005, 0.02))
+    const driftPull = isFuncView ? 0.002 : (n <= 50 ? 0.0003 : 0.0001)
     const clusterStrength = isFuncView ? 3.0 : (n <= 50 ? 0.7 : 1.5)
 
     // Build node group lookup for link distance/strength
@@ -307,8 +307,8 @@ export function GraphView() {
       .force('drift', forceDrift(driftAmplitude, driftPull) as never)
       .alphaDecay(isFuncView ? 1e-11 : 0)
       .alphaMin(0)
-      .velocityDecay(isFuncView ? 0.99 : (n <= 50 ? 0.55 : 0.65))
-      .alpha(isFuncView ? 0.003 : 0.08)
+      .velocityDecay(0.75)
+      .alpha(isFuncView ? 0.003 : 0.04)
 
     simRef.current = sim
 
@@ -574,16 +574,11 @@ export function GraphView() {
     })
 
     // --- Drag ---
-    const runtimeVelocityDecay = isFuncView ? 0.99 : (n <= 50 ? 0.55 : 0.65)
     nodeEls.call(
       d3.drag<SVGGElement, SimNode>()
         .on('start', function (ev, d) {
           tooltip.style('opacity', '0')
-          if (!ev.active) {
-            // Lower damping during drag so neighbors respond with bounce
-            if (isFuncView) sim.velocityDecay(0.6)
-            sim.alphaTarget(0.4).restart()
-          }
+          if (!ev.active) sim.alphaTarget(0.4).restart()
           d.fx = d.x
           d.fy = d.y
           d._dragStartX = d.x
@@ -608,10 +603,6 @@ export function GraphView() {
         .on('end', function (ev, d) {
           if (!ev.active) {
             sim.alphaTarget(0)
-            // Gradually restore high damping after bounce settles
-            if (isFuncView) {
-              setTimeout(() => sim.velocityDecay(runtimeVelocityDecay), 1500)
-            }
           }
           d.fx = null
           d.fy = null

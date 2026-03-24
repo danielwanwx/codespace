@@ -78,13 +78,17 @@ def classify_symbols(
         for qname in (edge.source, edge.target):
             cross_module_count[qname] = cross_module_count.get(qname, 0) + 1
 
-    # Pre-compute hub set for caller-aware classification
+    # Pre-compute hub set and repo function names for classification
     hub_qnames: set[str] = set()
+    repo_func_names: set[str] = set()
     for sym in symbols:
         fi = len(sym.called_by)
         fo = len(sym.calls)
         if (fi >= 4 and fo >= 4) or (fo >= 6 and fi == 0):
             hub_qnames.add(sym.qualified_name)
+        bare = sym.qualified_name.split("::")[-1].split(".")[-1]
+        if sym.kind in ("function", "method", "async_function", "async_method"):
+            repo_func_names.add(bare)
 
     categories: dict[str, str] = {}
     for sym in symbols:
@@ -94,16 +98,17 @@ def classify_symbols(
         cross_in = cross_in_count.get(sym.qualified_name, 0)
         bare_name = sym.qualified_name.split("::")[-1].split(".")[-1]
         called_by_hub = any(c in hub_qnames for c in sym.called_by)
+        calls_repo = any(c in repo_func_names for c in sym.calls)
 
         if fan_in >= 4 and fan_out >= 4:
             categories[sym.qualified_name] = "hub"
         elif fan_out >= 6 and fan_in == 0:
             # High fan-out entry point with no callers → hub (e.g. main())
             categories[sym.qualified_name] = "hub"
-        elif fan_in >= 3 and cross >= 2 and not bare_name.startswith("_"):
+        elif fan_in >= 3 and cross >= 2 and not bare_name.startswith("_") and (calls_repo or fan_out <= 2):
             categories[sym.qualified_name] = "api"
-        elif fan_in >= 2 and not bare_name.startswith("_"):
-            # Called by multiple symbols, public name → api
+        elif fan_in >= 2 and not bare_name.startswith("_") and (calls_repo or fan_out <= 2):
+            # Called by multiple symbols, public name, orchestrates others → api
             categories[sym.qualified_name] = "api"
         elif fan_in >= 1 and not bare_name.startswith("_") and (fan_out >= 7 or called_by_hub):
             # Public function with high fan-out OR directly called by hub → api

@@ -6,3 +6,5 @@ b1df2a1	0.9686	1.0	1.0	0.7647	35.6	keep	classify public functions with fan_in>=1
 0d3543a	0.9833	1.0	1.0	0.8235	32.1	keep	classify private orphan functions (no callers, no cross-in) as util
 none	0.9833	1.0	1.0	0.8235	32.9	discard	two-pass hub-caller demotion — fixed 4 api→internal but broke 4 others, net zero
 b934925	0.9858	1.0	1.0	0.8333	32.8	keep	method aliases (Class.method → method) + util threshold 3→4 — catches LLMClient methods
+a669876	1.0368	1.3922	1.0	0.8333	31.9	keep	extract module-level constants (UPPER_CASE) as symbols — 13 new constants
+453b0b1	1.0407	1.4118	1.0	0.8333	31.5	keep	also extract AnnAssign (typed) constants — 1 more constant

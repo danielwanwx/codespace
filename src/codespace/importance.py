@@ -91,7 +91,7 @@ def classify_symbols(
         elif fan_out >= 6 and fan_in == 0:
             # High fan-out entry point with no callers → hub (e.g. main())
             categories[sym.qualified_name] = "hub"
-        elif fan_in >= 3 and cross >= 2:
+        elif fan_in >= 3 and cross >= 2 and not bare_name.startswith("_"):
             categories[sym.qualified_name] = "api"
         elif fan_in >= 2 and not bare_name.startswith("_"):
             # Called by multiple symbols, public name → api
@@ -104,7 +104,7 @@ def classify_symbols(
             categories[sym.qualified_name] = "test"
         elif bare_name.startswith("_") and fan_in <= 1 and fan_out <= 1:
             categories[sym.qualified_name] = "util"
-        elif bare_name.startswith("_"):
+        elif bare_name.startswith("_") and fan_out <= 3:
             categories[sym.qualified_name] = "util"
         else:
             categories[sym.qualified_name] = "internal"

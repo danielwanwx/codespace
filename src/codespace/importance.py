@@ -107,9 +107,21 @@ def classify_symbols(
             categories[sym.qualified_name] = "test"
         elif bare_name.startswith("_") and fan_in <= 1 and fan_out <= 1:
             categories[sym.qualified_name] = "util"
-        elif bare_name.startswith("_") and fan_out <= 3:
+        elif bare_name.startswith("_") and fan_out <= 4:
             categories[sym.qualified_name] = "util"
         else:
             categories[sym.qualified_name] = "internal"
+
+    # Add flat aliases for class methods (Class.method → method)
+    method_aliases: dict[str, str] = {}
+    for qn, cat in categories.items():
+        parts = qn.split("::")
+        last = parts[-1]
+        if "." in last:
+            flat_last = last.split(".")[-1]
+            flat_qn = "::".join(parts[:-1]) + "::" + flat_last
+            if flat_qn not in categories:
+                method_aliases[flat_qn] = cat
+    categories.update(method_aliases)
 
     return categories

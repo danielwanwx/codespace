@@ -1,0 +1,2 @@
+commit	score	coverage	edge_quality	class_acc	pipeline_ms	status	description
+baseline	0.8657	1.0	1.0	0.3529	33.6	baseline	initial measurement — classification accuracy is the weakest at 35%

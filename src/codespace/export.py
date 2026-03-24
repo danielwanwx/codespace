@@ -93,6 +93,7 @@ def build_codespace_graph(
             "type": e.type,
             "weight": 1,
             "confidence": e.confidence,
+            "scope": e.scope,
         })
 
     return {

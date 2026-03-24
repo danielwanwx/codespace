@@ -158,6 +158,79 @@ function ModulePanel({ node, children, edges }: {
 
 // --- Function / Class panel ---
 
+const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
+  hub: { label: 'Hub', color: '#E91E63' },
+  api: { label: 'API', color: '#2196F3' },
+  internal: { label: 'Internal', color: '#78909C' },
+  util: { label: 'Utility', color: '#FF9800' },
+  test: { label: 'Test', color: '#9E9E9E' },
+}
+
+function ImportanceBadge({ node }: { node: GraphNode }) {
+  const importance = node.importance as number | undefined
+  const category = node.category as string | undefined
+  if (importance == null && !category) return null
+
+  const cat = category ? CATEGORY_LABELS[category] ?? { label: category, color: '#999' } : null
+  const pct = importance != null ? Math.round(importance * 100) : null
+
+  return (
+    <div className="flex items-center gap-2 mb-4">
+      {cat && (
+        <span
+          className="text-[10px] font-bold uppercase tracking-[0.1em] px-2 py-0.5"
+          style={{ color: cat.color, border: `1px solid ${cat.color}30`, background: `${cat.color}08` }}
+        >
+          {cat.label}
+        </span>
+      )}
+      {pct != null && (
+        <span className="text-[11px] text-[rgba(0,0,0,0.3)]">
+          Importance: <strong className="text-[rgba(0,0,0,0.55)]">{pct}%</strong>
+        </span>
+      )}
+    </div>
+  )
+}
+
+function OverviewSummary({ node }: { node: GraphNode }) {
+  const calls = (node.calls as string[]) ?? []
+  const calledBy = (node.called_by as string[]) ?? []
+  const category = node.category as string | undefined
+  const importance = node.importance as number | undefined
+
+  // Build a structural overview from graph data (no LLM needed)
+  const parts: string[] = []
+
+  if (node.type === 'class') {
+    parts.push(`Class defined in ${(node.file as string)?.split('/').pop() ?? 'unknown'}.`)
+  } else {
+    const kind = category === 'hub' ? 'orchestrator function' :
+                 category === 'api' ? 'entry point' :
+                 category === 'util' ? 'utility function' : 'function'
+    parts.push(`A ${kind} in ${(node.parent as string)?.split('::').pop() ?? 'this module'}.`)
+  }
+
+  if (calledBy.length > 0 && calls.length > 0) {
+    parts.push(`Called by ${calledBy.length} symbol${calledBy.length > 1 ? 's' : ''}, calls ${calls.length}.`)
+  } else if (calledBy.length > 0) {
+    parts.push(`Called by ${calledBy.length} symbol${calledBy.length > 1 ? 's' : ''}.`)
+  } else if (calls.length > 0) {
+    parts.push(`Calls ${calls.length} other symbol${calls.length > 1 ? 's' : ''}.`)
+  }
+
+  if (importance != null && importance >= 0.5) {
+    parts.push('High structural importance in the call graph.')
+  }
+
+  return (
+    <div className="mb-4">
+      <SectionLabel>Overview</SectionLabel>
+      <p className="text-[13px] text-[rgba(0,0,0,0.5)] leading-[1.7]">{parts.join(' ')}</p>
+    </div>
+  )
+}
+
 function FunctionPanel({ node }: { node: GraphNode }) {
   const selectNode = useStore((s) => s.selectNode)
   const graph = useStore((s) => s.graph)
@@ -193,18 +266,24 @@ function FunctionPanel({ node }: { node: GraphNode }) {
       </div>
 
       {/* Meta */}
-      <div className="flex items-center gap-3 mb-5 pb-4 border-b border-[rgba(0,0,0,0.06)]">
+      <div className="flex items-center gap-3 mb-4 pb-4 border-b border-[rgba(0,0,0,0.06)]">
         <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-[rgba(0,0,0,0.3)]">
           {node.type === 'class' ? 'Class' : 'Function'}
         </span>
         {location && <span className="text-[12px] text-[rgba(0,0,0,0.35)] font-['JetBrains_Mono',monospace]">{location}</span>}
       </div>
 
+      {/* Importance + Category badges */}
+      <ImportanceBadge node={node} />
+
       {className && (
         <div className="text-[12px] text-[rgba(0,0,0,0.35)] mb-3">
           class: <span className="text-[rgba(0,0,0,0.55)]">{className}</span>
         </div>
       )}
+
+      {/* Overview — always visible, no LLM needed */}
+      <OverviewSummary node={node} />
 
       {/* Signature */}
       {signature && (
@@ -366,8 +445,7 @@ function ExplainWithAI({ node }: { node: GraphNode }) {
       <SectionLabel>AI Analysis</SectionLabel>
       {cached ? (
         <div>
-          <div className="text-[14px] text-[rgba(0,0,0,0.55)] leading-[1.8]">
-            <strong className="block text-[10px] font-bold tracking-[0.12em] uppercase text-[rgba(0,0,0,0.25)] mb-2">Explanation</strong>
+          <div className="text-[14px] text-[rgba(0,0,0,0.55)] leading-[1.8] whitespace-pre-line">
             {cached}
           </div>
           {wikiPath && (
@@ -381,21 +459,24 @@ function ExplainWithAI({ node }: { node: GraphNode }) {
             </a>
           )}
         </div>
-      ) : !hasKey ? (
-        <div className="text-[12px] text-[rgba(0,0,0,0.25)]">
-          Configure API key in settings to enable AI explanations
-        </div>
       ) : (
-        <>
+        <div>
           <button
-            onClick={handleExplain}
-            disabled={loading}
-            className="inline-block mt-2 px-7 py-2.5 bg-[#111] text-white border-none cursor-pointer text-[12px] font-medium uppercase tracking-[0.15em] hover:opacity-80 transition-opacity disabled:opacity-40"
+            onClick={hasKey ? handleExplain : undefined}
+            disabled={loading || !hasKey}
+            className="inline-block mt-2 px-7 py-2.5 bg-[#111] text-white border-none cursor-pointer text-[12px] font-medium uppercase tracking-[0.15em] hover:opacity-80 transition-opacity disabled:opacity-30"
           >
             {loading ? 'ANALYZING...' : 'EXPLAIN WITH AI'}
           </button>
+          {!hasKey && (
+            <p className="mt-2 text-[11px] text-[rgba(0,0,0,0.3)]">
+              Click the gear icon (bottom-right) to configure your API key.
+              <br />
+              Supports Anthropic, OpenAI, DeepSeek, Google Gemini, MiniMax, Moonshot, Zhipu, Qwen, Doubao.
+            </p>
+          )}
           {error && (
-            <p className="mt-2 text-[11px] text-[var(--error-red)]">{error}</p>
+            <p className="mt-2 text-[11px] text-red-500">{error}</p>
           )}
           {wikiPath && (
             <a
@@ -407,7 +488,7 @@ function ExplainWithAI({ node }: { node: GraphNode }) {
               View full documentation &rarr;
             </a>
           )}
-        </>
+        </div>
       )}
     </div>
   )

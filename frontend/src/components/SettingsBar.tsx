@@ -1,5 +1,8 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useStore } from '../store'
+import { PROVIDERS } from '../lib/llm'
+
+const providerEntries = Object.entries(PROVIDERS)
 
 export function SettingsBar() {
   const [open, setOpen] = useState(false)
@@ -8,11 +11,23 @@ export function SettingsBar() {
   const llmModel = useStore((s) => s.llmModel)
   const setLLMSettings = useStore((s) => s.setLLMSettings)
 
-  const [localProvider, setLocalProvider] = useState<'anthropic' | 'openai'>(
+  const [localProvider, setLocalProvider] = useState(
     llmProvider ?? 'anthropic',
   )
   const [localKey, setLocalKey] = useState(llmApiKey)
   const [localModel, setLocalModel] = useState(llmModel)
+
+  const currentCfg = useMemo(() => PROVIDERS[localProvider], [localProvider])
+  const models = currentCfg?.models ?? []
+
+  function handleProviderChange(id: string) {
+    setLocalProvider(id)
+    // Auto-select first model of new provider
+    const cfg = PROVIDERS[id]
+    if (cfg) setLocalModel(cfg.models[0]?.id ?? '')
+    // Clear key when switching provider
+    setLocalKey('')
+  }
 
   function handleSave() {
     setLLMSettings(localProvider, localKey, localModel)
@@ -62,13 +77,12 @@ export function SettingsBar() {
             <label className="block text-[11px] uppercase tracking-[0.1em] text-[rgba(0,0,0,0.35)] mb-1">Provider</label>
             <select
               value={localProvider}
-              onChange={(e) =>
-                setLocalProvider(e.target.value as 'anthropic' | 'openai')
-              }
+              onChange={(e) => handleProviderChange(e.target.value)}
               className="w-full mb-4 px-3 py-2 bg-transparent border-b border-[rgba(0,0,0,0.1)] text-[#111] text-[13px] focus:outline-none focus:border-[#111] appearance-none cursor-pointer"
             >
-              <option value="anthropic">Anthropic</option>
-              <option value="openai">OpenAI</option>
+              {providerEntries.map(([id, cfg]) => (
+                <option key={id} value={id}>{cfg.label}</option>
+              ))}
             </select>
 
             {/* API Key */}
@@ -77,36 +91,21 @@ export function SettingsBar() {
               type="password"
               value={localKey}
               onChange={(e) => setLocalKey(e.target.value)}
-              placeholder={
-                localProvider === 'anthropic'
-                  ? 'sk-ant-...'
-                  : 'sk-...'
-              }
+              placeholder={currentCfg?.keyPlaceholder ?? 'your-api-key'}
               className="w-full mb-4 px-3 py-2 bg-transparent border-b border-[rgba(0,0,0,0.1)] text-[#111] text-[13px] placeholder:text-[rgba(0,0,0,0.2)] focus:outline-none focus:border-[#111]"
             />
 
-            {/* Model */}
-            <label className="block text-[11px] uppercase tracking-[0.1em] text-[rgba(0,0,0,0.35)] mb-1">
-              Model{' '}
-              <span style={{ opacity: 0.5 }}>
-                (default:{' '}
-                {localProvider === 'anthropic'
-                  ? 'claude-sonnet-4-5-20250929'
-                  : 'gpt-4o-mini'}
-                )
-              </span>
-            </label>
-            <input
-              type="text"
-              value={localModel}
+            {/* Model selector */}
+            <label className="block text-[11px] uppercase tracking-[0.1em] text-[rgba(0,0,0,0.35)] mb-1">Model</label>
+            <select
+              value={localModel || models[0]?.id || ''}
               onChange={(e) => setLocalModel(e.target.value)}
-              placeholder={
-                localProvider === 'anthropic'
-                  ? 'claude-sonnet-4-5-20250929'
-                  : 'gpt-4o-mini'
-              }
-              className="w-full mb-6 px-3 py-2 bg-transparent border-b border-[rgba(0,0,0,0.1)] text-[#111] text-[13px] placeholder:text-[rgba(0,0,0,0.2)] focus:outline-none focus:border-[#111]"
-            />
+              className="w-full mb-6 px-3 py-2 bg-transparent border-b border-[rgba(0,0,0,0.1)] text-[#111] text-[13px] focus:outline-none focus:border-[#111] appearance-none cursor-pointer"
+            >
+              {models.map((m) => (
+                <option key={m.id} value={m.id}>{m.label}</option>
+              ))}
+            </select>
 
             {/* Actions */}
             <div className="flex gap-3 justify-end">

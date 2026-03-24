@@ -20,6 +20,7 @@ class ResolvedEdge:
     target: str  # qualified name
     type: str = "call"
     confidence: str = "high"  # "high" | "medium" | "low"
+    scope: str = "inter"  # "inter" (cross-module) | "intra" (same-module)
 
 
 def _extract_module(qname: str) -> str:
@@ -127,18 +128,24 @@ def aggregate_edges(
             resolved = _resolve(candidates, caller_module, caller_imports)
             for target_qname, confidence in resolved:
                 target_module = _extract_module(target_qname)
-                if caller_module != target_module:
-                    func_edges.append(ResolvedEdge(
-                        source=sym.qualified_name,
-                        target=target_qname,
-                        confidence=confidence,
-                    ))
+                scope = "intra" if caller_module == target_module else "inter"
+                # Skip self-calls
+                if target_qname == sym.qualified_name:
+                    continue
+                func_edges.append(ResolvedEdge(
+                    source=sym.qualified_name,
+                    target=target_qname,
+                    confidence=confidence,
+                    scope=scope,
+                ))
 
-    # Step 3: Aggregate to module level
+    # Step 3: Aggregate to module level (inter edges only)
     module_edges: dict[tuple[str, str], dict] = defaultdict(
         lambda: {"weight": 0, "children": []}
     )
     for edge in func_edges:
+        if edge.scope == "intra":
+            continue
         key = (_extract_module(edge.source), _extract_module(edge.target))
         module_edges[key]["weight"] += 1
         module_edges[key]["children"].append(

@@ -39,10 +39,10 @@ interface AppState {
   setZoomLevel: (level: 'repo' | 'module' | 'function') => void
   toggleCluster: (id: string) => void
   // LLM settings
-  llmProvider: 'anthropic' | 'openai' | null
+  llmProvider: string | null
   llmApiKey: string
   llmModel: string
-  setLLMSettings: (provider: 'anthropic' | 'openai' | null, key: string, model: string) => void
+  setLLMSettings: (provider: string | null, key: string, model: string) => void
   // Explanation cache
   explanationCache: Record<string, string>
   setExplanation: (nodeId: string, text: string) => void

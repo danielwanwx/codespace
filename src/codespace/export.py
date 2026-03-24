@@ -13,12 +13,14 @@ def build_codespace_graph(
     mod_edges: dict[tuple[str, str], dict],
     global_context: str = "",
     summaries: dict[str, str] | None = None,
+    l1_summaries: dict[str, str] | None = None,
     wiki_paths: dict[str, str] | None = None,
     importance_scores: dict[str, float] | None = None,
     categories: dict[str, str] | None = None,
 ) -> dict:
     """Assemble the full codespace_graph.json structure."""
     summaries = summaries or {}
+    l1_summaries = l1_summaries or {}
     wiki_paths = wiki_paths or {}
     nodes = []
     edges = []
@@ -48,6 +50,7 @@ def build_codespace_graph(
             "file_count": cluster.file_count,
             "symbol_count": cluster.symbol_count,
             "summary_l1": summaries.get(cluster.id),
+            "l1_summary": l1_summaries.get(cluster.id),
             "wiki_path": wiki_paths.get(cluster.id),
         })
 

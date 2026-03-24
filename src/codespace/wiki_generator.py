@@ -11,6 +11,7 @@ from codespace.wiki_prompt import (
     build_wiki_prompt,
     build_summary_prompt,
 )
+from codespace.wiki_layers import build_layers, generate_index
 
 
 # Embedded CSS extracted from wiki_example.html for self-contained pages
@@ -220,6 +221,11 @@ def _safe_filename(name: str) -> str:
     return re.sub(r"[^a-zA-Z0-9_.-]", "_", name) + ".html"
 
 
+def _safe_filename_md(name: str) -> str:
+    """Convert a qualified name to a safe markdown filename."""
+    return re.sub(r"[^a-zA-Z0-9_.-]", "_", name) + ".md"
+
+
 def _extract_first_sentence(text: str) -> str:
     """Extract first sentence from LLM response for summary_l1."""
     text = text.strip()
@@ -245,14 +251,15 @@ def generate_wiki_pages(
     llm_client: LLMClient,
     output_dir: str,
     wiki_depth: str = "modules",
-) -> tuple[dict[str, str], dict[str, str]]:
-    """Generate wiki HTML pages for modules (and optionally symbols).
+) -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
+    """Generate wiki pages (MD source of truth + HTML) for modules (and optionally symbols).
 
     Returns:
-        (wiki_paths, summaries) - dicts mapping node id -> relative wiki path / summary text
+        (wiki_paths, l0_summaries, l1_summaries) - dicts mapping node id -> relative wiki path / L0 text / L1 markdown
     """
     wiki_paths: dict[str, str] = {}
-    summaries: dict[str, str] = {}
+    l0_summaries: dict[str, str] = {}
+    l1_summaries: dict[str, str] = {}
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -288,12 +295,19 @@ def generate_wiki_pages(
             print(f"         Warning: LLM failed for {cluster.id}: {e}")
             md_response = f"# {cluster.semantic_label or cluster.name}\n\nWiki generation failed."
 
-        # Extract summary
-        summary = _extract_first_sentence(md_response)
-        summaries[cluster.id] = summary
+        # Extract layers (L0/L1/L2) from the markdown response
+        layers = build_layers(md_response)
+        l0_summaries[cluster.id] = layers.l0
+        l1_summaries[cluster.id] = layers.l1
 
-        # Convert to HTML and save
-        body_html = _md_to_html(md_response)
+        # Save markdown (source of truth)
+        md_filename = _safe_filename_md(cluster.id)
+        md_filepath = os.path.join(output_dir, md_filename)
+        with open(md_filepath, "w") as f:
+            f.write(layers.l2)
+
+        # Render HTML from markdown
+        body_html = _md_to_html(layers.l2)
         breadcrumb_parts = cluster.path.split("/")
         breadcrumb = " <span>/</span> ".join(
             f'<a href="#">{p}</a>' for p in breadcrumb_parts
@@ -336,10 +350,19 @@ def generate_wiki_pages(
                 print(f"         Warning: LLM failed for {sym.qualified_name}: {e}")
                 md_response = f"# {sym.qualified_name.split('::')[-1]}\n\nWiki generation failed."
 
-            summary = _extract_first_sentence(md_response)
-            summaries[sym.qualified_name] = summary
+            # Extract layers for symbols too
+            sym_layers = build_layers(md_response)
+            l0_summaries[sym.qualified_name] = sym_layers.l0
+            l1_summaries[sym.qualified_name] = sym_layers.l1
 
-            body_html = _md_to_html(md_response)
+            # Save markdown
+            md_filename = _safe_filename_md(sym.qualified_name)
+            md_filepath = os.path.join(output_dir, md_filename)
+            with open(md_filepath, "w") as f:
+                f.write(sym_layers.l2)
+
+            # Render HTML from markdown
+            body_html = _md_to_html(sym_layers.l2)
             short_name = sym.qualified_name.split("::")[-1]
             breadcrumb = f'<a href="#">{sym.file}</a> <span>/</span> {short_name}'
             html = _build_html_page(
@@ -353,4 +376,9 @@ def generate_wiki_pages(
                 f.write(html)
             wiki_paths[sym.qualified_name] = f"wiki/{filename}"
 
-    return wiki_paths, summaries
+    # Generate _index.md
+    module_entries = [(c.semantic_label or c.name, l0_summaries.get(c.id, "")) for c in clusters]
+    with open(os.path.join(output_dir, "_index.md"), "w") as f:
+        f.write(generate_index(module_entries))
+
+    return wiki_paths, l0_summaries, l1_summaries

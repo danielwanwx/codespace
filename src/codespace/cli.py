@@ -17,10 +17,15 @@ FRONTEND_DIST_DIR = "frontend/dist"
 
 
 def main():
+    # Dispatch wiki subcommand before argparse
+    if len(sys.argv) > 1 and sys.argv[1] == "wiki":
+        from codespace.wiki_cli import wiki_main
+        sys.exit(wiki_main(sys.argv[2:]))
+
     parser = argparse.ArgumentParser(description="Codespace — code graph generator")
     parser.add_argument("repo_path", help="Path to local git repo")
     parser.add_argument("--output", "-o", default="codespace_graph.json", help="Output JSON path")
-    parser.add_argument("--llm-provider", choices=["anthropic", "openai", "none"], default="none")
+    parser.add_argument("--llm-provider", choices=["anthropic", "openai", "minimax", "minimax-global", "deepseek", "none"], default="none")
     parser.add_argument("--llm-api-key", default=None)
     parser.add_argument("--llm-model", default=None, help="Override default LLM model")
     parser.add_argument(
@@ -102,10 +107,11 @@ def main():
     # Step 7: Generate wiki pages (optional LLM)
     wiki_paths: dict[str, str] = {}
     summaries: dict[str, str] = {}
+    l1_summaries: dict[str, str] = {}
     if wiki_depth != "none" and llm_client:
         print(f"  [7/{total_steps}] Generating wiki pages ({wiki_depth})...")
         output_dir = os.path.join(os.path.dirname(os.path.abspath(args.output)), "wiki")
-        wiki_paths, summaries = generate_wiki_pages(
+        wiki_paths, summaries, l1_summaries = generate_wiki_pages(
             clusters, all_symbols, file_contents,
             func_edges, mod_edges, llm_client, output_dir,
             wiki_depth=wiki_depth,
@@ -119,7 +125,7 @@ def main():
     print(f"  [{step_num}/{total_steps}] Exporting graph...")
     graph = build_codespace_graph(
         repo_name, clusters, all_symbols, func_edges, mod_edges,
-        summaries=summaries, wiki_paths=wiki_paths,
+        summaries=summaries, l1_summaries=l1_summaries, wiki_paths=wiki_paths,
         importance_scores=importance_scores, categories=categories,
     )
 

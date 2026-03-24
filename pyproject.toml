@@ -6,6 +6,8 @@ dependencies = []
 
 [project.optional-dependencies]
 llm = ["anthropic", "openai"]
+mcp = ["mcp>=0.9.0"]
+rich = ["rich"]
 dev = ["pytest", "pytest-cov"]
 
 [project.scripts]

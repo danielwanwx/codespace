@@ -85,6 +85,16 @@ function ModulePanel({ node, children, edges }: {
         </span>
       </div>
 
+      {/* L1 Wiki Summary */}
+      {node.l1_summary && (
+        <div className="mb-5">
+          <SectionLabel>Overview</SectionLabel>
+          <div className="text-[13px] text-[rgba(0,0,0,0.6)] leading-[1.8] [&_p]:mb-2 [&_strong]:text-[rgba(0,0,0,0.8)] [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:mb-2 [&_li]:mb-1 [&_code]:bg-[rgba(0,0,0,0.04)] [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[12px] [&_code]:font-['JetBrains_Mono',monospace]">
+            <ReactMarkdown>{node.l1_summary as string}</ReactMarkdown>
+          </div>
+        </div>
+      )}
+
       {/* Functions list */}
       {functions.length > 0 && (
         <>

@@ -8,3 +8,5 @@ none	0.9833	1.0	1.0	0.8235	32.9	discard	two-pass hub-caller demotion — fixed 4
 b934925	0.9858	1.0	1.0	0.8333	32.8	keep	method aliases (Class.method → method) + util threshold 3→4 — catches LLMClient methods
 a669876	1.0368	1.3922	1.0	0.8333	31.9	keep	extract module-level constants (UPPER_CASE) as symbols — 13 new constants
 453b0b1	1.0407	1.4118	1.0	0.8333	31.5	keep	also extract AnnAssign (typed) constants — 1 more constant
+2be0f25	1.0546	1.4118	1.0	0.8889	32.2	keep	hub-caller aware api — fan_out>=7 for non-hub-callers, fixes extract_l0 and generate_index
+5d3d36e	1.0585	1.4314	1.0	0.8889	32.5	keep	extract __post_init__ methods — dataclass lifecycle hook (+1 symbol)

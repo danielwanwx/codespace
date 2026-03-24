@@ -78,6 +78,14 @@ def classify_symbols(
         for qname in (edge.source, edge.target):
             cross_module_count[qname] = cross_module_count.get(qname, 0) + 1
 
+    # Pre-compute hub set for caller-aware classification
+    hub_qnames: set[str] = set()
+    for sym in symbols:
+        fi = len(sym.called_by)
+        fo = len(sym.calls)
+        if (fi >= 4 and fo >= 4) or (fo >= 6 and fi == 0):
+            hub_qnames.add(sym.qualified_name)
+
     categories: dict[str, str] = {}
     for sym in symbols:
         fan_in = len(sym.called_by)
@@ -85,6 +93,7 @@ def classify_symbols(
         cross = cross_module_count.get(sym.qualified_name, 0)
         cross_in = cross_in_count.get(sym.qualified_name, 0)
         bare_name = sym.qualified_name.split("::")[-1].split(".")[-1]
+        called_by_hub = any(c in hub_qnames for c in sym.called_by)
 
         if fan_in >= 4 and fan_out >= 4:
             categories[sym.qualified_name] = "hub"
@@ -96,8 +105,8 @@ def classify_symbols(
         elif fan_in >= 2 and not bare_name.startswith("_"):
             # Called by multiple symbols, public name → api
             categories[sym.qualified_name] = "api"
-        elif fan_in >= 1 and fan_out >= 4 and not bare_name.startswith("_"):
-            # Public pipeline function with substantial fan-out → api
+        elif fan_in >= 1 and not bare_name.startswith("_") and (fan_out >= 7 or called_by_hub):
+            # Public function with high fan-out OR directly called by hub → api
             categories[sym.qualified_name] = "api"
         elif bare_name.startswith("_") and fan_in == 0 and cross_in == 0:
             # Private function with no callers → orphaned helper util

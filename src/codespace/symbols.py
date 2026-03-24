@@ -104,21 +104,24 @@ def extract_symbols(
 
     # Extract module-level constants (UPPER_CASE or _UPPER)
     for node in ast.iter_child_nodes(tree):
+        cname = None
         if isinstance(node, ast.Assign) and len(node.targets) == 1:
             target = node.targets[0]
             if isinstance(target, ast.Name):
-                name = target.id
-                if name.isupper() or (name.startswith("_") and name[1:].isupper()):
-                    qname = f"{repo}::{module_path}::{name}"
-                    symbols.append(
-                        SymbolEntry(
-                            qualified_name=qname,
-                            kind="constant",
-                            signature=f"{name} = ...",
-                            file=file_path,
-                            line=node.lineno,
-                        )
-                    )
+                cname = target.id
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            cname = node.target.id
+        if cname and (cname.isupper() or (cname.startswith("_") and cname[1:].isupper())):
+            qname = f"{repo}::{module_path}::{cname}"
+            symbols.append(
+                SymbolEntry(
+                    qualified_name=qname,
+                    kind="constant",
+                    signature=f"{cname} = ...",
+                    file=file_path,
+                    line=node.lineno,
+                )
+            )
 
     return symbols
 

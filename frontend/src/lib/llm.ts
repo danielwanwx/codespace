@@ -178,7 +178,7 @@ async function callLLM(
       },
       body: JSON.stringify({
         model: selectedModel,
-        max_tokens: 500,
+        max_tokens: 2048,
         messages: [{ role: 'user', content: prompt }],
       }),
     })
@@ -199,7 +199,7 @@ async function callLLM(
     },
     body: JSON.stringify({
       model: selectedModel,
-      max_tokens: 500,
+      max_tokens: 2048,
       messages: [{ role: 'user', content: prompt }],
     }),
   })
@@ -251,21 +251,32 @@ export async function explainModule(
 }
 
 function buildModulePrompt(context: ModuleExplainContext): string {
-  return `Explain what this module does in 2-3 sentences, focusing on its purpose and how it fits in the codebase.
+  return `Analyze this module and provide a structured explanation in markdown format.
 
 Module: ${context.moduleName}
 Path: ${context.path}
 Files: ${context.fileCount}
-Contains: ${context.symbols.slice(0, 20).join(', ') || 'none'}${context.symbols.length > 20 ? '...' : ''}
+Contains: ${context.symbols.slice(0, 30).join(', ') || 'none'}${context.symbols.length > 30 ? '...' : ''}
 Depends on: ${context.outgoing.join(', ') || 'none'}
 Used by: ${context.incoming.join(', ') || 'none'}
 ${context.globalContext ? `\nProject context: ${context.globalContext}` : ''}
 
-Respond with a clear, concise explanation. No markdown headers.`
+Respond in this markdown structure:
+
+**Purpose:** One paragraph explaining what this module does and its role in the codebase.
+
+**Key Components:**
+- List the most important symbols and what each does (3-5 items)
+
+**Dependencies:**
+- Explain why it depends on other modules and how it serves modules that use it
+
+**Architecture Notes:**
+Any important design patterns, caveats, or architectural decisions.`
 }
 
 function buildPrompt(context: ExplainContext): string {
-  return `Explain what this function does in 2-3 sentences, focusing on its purpose and how it fits in the codebase.
+  return `Analyze this function and provide a structured explanation in markdown format.
 
 Function: ${context.signature}
 ${context.docstring ? `Docstring: ${context.docstring}` : ''}
@@ -274,5 +285,13 @@ Calls: ${context.calls.join(', ') || 'none'}
 Called by: ${context.calledBy.join(', ') || 'none'}
 ${context.globalContext ? `\nProject context: ${context.globalContext}` : ''}
 
-Respond with a clear, concise explanation. No markdown headers.`
+Respond in this markdown structure:
+
+**Purpose:** One paragraph explaining what this function does and why it exists.
+
+**How it works:**
+Step-by-step explanation of the function's logic and behavior.
+
+**Integration:**
+How this function fits into the broader codebase — what calls it, what it depends on, and its role in the data/control flow.`
 }

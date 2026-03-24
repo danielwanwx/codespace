@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import ReactMarkdown from 'react-markdown'
 import { useStore } from '../store'
 import type { GraphNode, GraphEdge } from '../store'
 import { explainFunction, explainModule } from '../lib/llm'
@@ -445,8 +446,8 @@ function ExplainWithAI({ node }: { node: GraphNode }) {
       <SectionLabel>AI Analysis</SectionLabel>
       {cached ? (
         <div>
-          <div className="text-[14px] text-[rgba(0,0,0,0.55)] leading-[1.8] whitespace-pre-line">
-            {cached}
+          <div className="text-[13px] text-[rgba(0,0,0,0.6)] leading-[1.8] [&_p]:mb-2 [&_strong]:text-[rgba(0,0,0,0.8)] [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:mb-2 [&_li]:mb-1 [&_code]:bg-[rgba(0,0,0,0.04)] [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[12px] [&_code]:font-['JetBrains_Mono',monospace]">
+            <ReactMarkdown>{cached}</ReactMarkdown>
           </div>
           {wikiPath && (
             <a
